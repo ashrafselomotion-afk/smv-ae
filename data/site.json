@@ -1,0 +1,61 @@
+{
+  "hero": {
+    "line1": "We frame moments",
+    "line2": "that govern attention.",
+    "sub": "Media production · Ten years · UAE",
+    "reel": ""
+  },
+  "statement": "A decade behind the lens. From national events to frames that don't exist yet.",
+  "disciplines": [
+    { "title": "Videography", "tagline": "Story in motion.", "clip": "", "hue": 36 },
+    { "title": "Photography", "tagline": "The decisive frame.", "clip": "", "hue": 210 },
+    { "title": "AI Video Production", "tagline": "Beyond what a camera can reach.", "clip": "", "hue": 280 },
+    { "title": "Motion Graphics", "tagline": "Ideas that move.", "clip": "", "hue": 160 },
+    { "title": "Government Event Coverage", "tagline": "Nation-scale moments, fully covered.", "clip": "", "hue": 10 }
+  ],
+  "numbers": [
+    { "value": 10, "suffix": "", "label": "Years" },
+    { "value": 400, "suffix": "+", "label": "Projects" },
+    { "value": 120, "suffix": "+", "label": "Events covered" },
+    { "value": 60, "suffix": "+", "label": "Clients" }
+  ],
+  "clients": [
+    "PepsiCo · Mo Salah",
+    "Almarai · Anchor",
+    "BEEAH Group",
+    "Edge Group",
+    "Dubai Airshow",
+    "Genesis F1 2025",
+    "Dubai Duty Free",
+    "EWEC",
+    "SHUROOQ",
+    "Invest in Sharjah",
+    "IGCF",
+    "SIBF",
+    "Sharjah Entrepreneurship Festival",
+    "House of Wisdom",
+    "Arab Youth Center",
+    "SPC Free Zone",
+    "Messe Frankfurt",
+    "MRO Middle East",
+    "AIME Exhibitions",
+    "Xposure Festival",
+    "Les Misérables · Abu Dhabi",
+    "The Big Heart Foundation",
+    "Hope Makers",
+    "IUCN · Abu Dhabi"
+  ],
+  "process": [
+    { "title": "Brief", "text": "One conversation. We take it from there." },
+    { "title": "Produce", "text": "Crew, cameras, code — whatever the frame needs." },
+    { "title": "Deliver", "text": "On time, in every format that matters." }
+  ],
+  "contact": {
+    "headline": "Let's make something\nworth watching.",
+    "email": "hello@smv.ae",
+    "phone": "+971 50 000 0000",
+    "whatsapp": "971500000000",
+    "instagram": "smv.ae",
+    "location": "Dubai · United Arab Emirates"
+  }
+}

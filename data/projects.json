@@ -1,0 +1,155 @@
+{
+  "projects": [
+    {
+      "id": "p01",
+      "title": "Union Day — National Parade",
+      "client": "Federal government entity (placeholder)",
+      "year": "2024",
+      "category": "events",
+      "size": "sp7",
+      "image": "",
+      "video": "",
+      "hue": 38,
+      "featured": true,
+      "challenge": "Seven venues, one broadcast window. Live multi-cam coverage, same-day socials and a national archive edit — delivered while the event was still running.",
+      "stats": [
+        { "value": "7", "label": "Venues" },
+        { "value": "22", "label": "Camera operators" },
+        { "value": "48h", "label": "Continuous coverage" }
+      ],
+      "description": "End-to-end coverage of a national celebration: broadcast feed, aerial units, a photo desk and a same-night highlight film."
+    },
+    {
+      "id": "p02",
+      "title": "Desert Bloom — AI Concept Film",
+      "client": "Internal · R&D",
+      "year": "2025",
+      "category": "ai",
+      "size": "sp5",
+      "image": "",
+      "video": "",
+      "hue": 285,
+      "description": "A fully AI-generated short exploring landscapes no camera can reach. Generative video, hand-directed frame by frame."
+    },
+    {
+      "id": "p03",
+      "title": "Skyline, Before Sunrise",
+      "client": "Editorial (placeholder)",
+      "year": "2023",
+      "category": "photo",
+      "size": "sp4",
+      "image": "",
+      "video": "",
+      "hue": 210,
+      "description": "A photographic study of the city in its quietest hour — long exposures, empty highways, first light."
+    },
+    {
+      "id": "p04",
+      "title": "Launch Film — Electric SUV",
+      "client": "Automotive brand (placeholder)",
+      "year": "2024",
+      "category": "video",
+      "size": "sp8",
+      "image": "",
+      "video": "",
+      "hue": 15,
+      "description": "Ninety seconds from studio to dune. Full production: direction, cinematography, edit and grade."
+    },
+    {
+      "id": "p05",
+      "title": "Kinetic Idents",
+      "client": "Broadcast client (placeholder)",
+      "year": "2023",
+      "category": "motion",
+      "size": "sp6",
+      "image": "",
+      "video": "",
+      "hue": 160,
+      "description": "A modular ident system — type, texture and rhythm built to flex across a full channel rebrand."
+    },
+    {
+      "id": "p06",
+      "title": "Global Summit — Opening Sequence",
+      "client": "Government entity (placeholder)",
+      "year": "2025",
+      "category": "events",
+      "size": "sp6",
+      "image": "",
+      "video": "",
+      "hue": 45,
+      "description": "Opening film and live screen content for an international summit stage — cut to the second."
+    },
+    {
+      "id": "p07",
+      "title": "Makers — Portrait Series",
+      "client": "Cultural foundation (placeholder)",
+      "year": "2024",
+      "category": "photo",
+      "size": "sp5",
+      "image": "",
+      "video": "",
+      "hue": 330,
+      "description": "Portraits of craftspeople at work — one light, one lens, no retouching of hands."
+    },
+    {
+      "id": "p08",
+      "title": "Hospitality Brand Film",
+      "client": "Hotel group (placeholder)",
+      "year": "2023",
+      "category": "video",
+      "size": "sp7",
+      "image": "",
+      "video": "",
+      "hue": 190,
+      "description": "A slow, tactile film about arrival — shot across three properties in four days."
+    },
+    {
+      "id": "p09",
+      "title": "Neural Cityscapes",
+      "client": "Tech brand (placeholder)",
+      "year": "2025",
+      "category": "ai",
+      "size": "sp8",
+      "image": "",
+      "video": "",
+      "hue": 260,
+      "description": "City futures imagined with generative video, graded to sit seamlessly next to real plates."
+    },
+    {
+      "id": "p10",
+      "title": "Data in Motion",
+      "client": "Financial group (placeholder)",
+      "year": "2024",
+      "category": "motion",
+      "size": "sp4",
+      "image": "",
+      "video": "",
+      "hue": 130,
+      "description": "Live market data turned into broadcast graphics — a system, not a one-off."
+    },
+    {
+      "id": "p11",
+      "title": "Flag Day Ceremony",
+      "client": "Government entity (placeholder)",
+      "year": "2023",
+      "category": "events",
+      "size": "sp6",
+      "image": "",
+      "video": "",
+      "hue": 5,
+      "description": "Full ceremony coverage with a two-hour turnaround highlight for national channels."
+    },
+    {
+      "id": "p12",
+      "title": "Coastline — Aerial Study",
+      "client": "Tourism board (placeholder)",
+      "year": "2025",
+      "category": "photo",
+      "size": "sp6",
+      "image": "",
+      "video": "",
+      "hue": 195,
+      "description": "An aerial photo essay along the Gulf coast — shot at dawn over ten days."
+    }
+  ]
+}
