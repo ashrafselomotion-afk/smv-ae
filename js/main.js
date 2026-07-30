@@ -81,6 +81,64 @@ function mediaNode(url, poster, alt) {
 
 /* ---------------------------------------------------------------- render -- */
 
+/** The opening image first, then the rest of the background reel. */
+function heroSources(site) {
+  const out = [];
+  if (site?.hero?.image) out.push(site.hero.image);
+  (site?.hero?.background || []).forEach((b) => {
+    if (b.image && !out.includes(b.image)) out.push(b.image);
+  });
+  return out;
+}
+
+/**
+ * The header plays on arrival. Order of preference:
+ *   1. a real showreel set in the admin (mp4 or a Vimeo / YouTube / Drive link)
+ *   2. the bundled looping placeholder
+ *   3. a crossfading stack of work stills
+ * Nothing here is decorative, it is the reel behind the name.
+ */
+function renderHeroMedia(site) {
+  const fig = $('[data-hero-media]');
+  if (!fig) return;
+  const hero = site.hero || {};
+  const v = embed(hero.video);
+
+  if (v && v.type === 'video') {
+    fig.innerHTML = '';
+    const el = document.createElement('video');
+    el.src = v.src;
+    el.muted = true; el.loop = true; el.autoplay = true; el.playsInline = true;
+    el.setAttribute('muted', '');            // iOS wants the attribute, not just the property
+    el.setAttribute('playsinline', '');
+    if (hero.image) el.poster = hero.image;
+    fig.appendChild(el);
+    fig.dataset.mode = 'video';
+    el.play?.().catch(() => {});             // blocked autoplay leaves the poster showing
+    return;
+  }
+
+  if (v && v.type === 'iframe') {
+    // a hosted player cannot be muted reliably as a background, so it opens in
+    // the case view instead and the header keeps the loop
+    fig.dataset.hosted = '1';
+  }
+
+  if (hero.loop) {
+    fig.innerHTML = `<img src="${esc(hero.loop)}" alt="" class="on" fetchpriority="high">`;
+    fig.dataset.mode = 'loop';
+    return;
+  }
+
+  const stills = heroSources(site);
+  if (!stills.length) return;
+  fig.innerHTML = stills.map((src, i) => `
+    <img src="${esc(src)}" alt="${i === 0 ? 'Still from an SMV production' : ''}"
+         class="${i === 0 ? 'on' : ''}" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'}>
+  `).join('');
+  fig.dataset.mode = 'stills';
+}
+
 function renderChrome(site) {
   const n = site.brand?.navLabels || {};
   $$('[data-nav]').forEach((el) => setText(el, n[el.dataset.nav]));
@@ -91,19 +149,7 @@ function renderChrome(site) {
     $$(`[data-hero="${k}"]`).forEach((el) => setText(el, v));
   });
 
-  const heroFig = $('[data-hero-media]');
-  const heroVid = embed(site.hero?.video);
-  if (heroFig && heroVid && heroVid.type === 'video') {
-    heroFig.innerHTML = '';
-    const v = document.createElement('video');
-    v.src = heroVid.src; v.muted = true; v.loop = true; v.autoplay = true;
-    v.playsInline = true; v.poster = site.hero.image || '';
-    heroFig.appendChild(v);
-    heroFig.dataset.video = '1';
-  } else if (heroFig && site.hero?.image) {
-    const img = $('img', heroFig);
-    if (img) img.src = site.hero.image;
-  }
+  renderHeroMedia(site);
 
   setText($('[data-statement]'), site.statement);
   setText($('[data-events-heading]'), site.events?.heading);
@@ -309,8 +355,13 @@ function renderFeatured(projects) {
   setText($('[data-feat-challenge]', sec), p.challenge || p.description);
   const stats = $('[data-feat-stats]', sec);
   if (stats) {
-    stats.innerHTML = (p.stats || [])
-      .map((s) => `<div><b>${esc(s.value)}</b><span>${esc(s.label)}</span></div>`).join('');
+    stats.innerHTML = (p.stats || []).map((s) => {
+      const c = countable(s.value);
+      const b = c
+        ? `<b data-count="${c.value}" data-prefix="${esc(c.prefix)}" data-suffix="${esc(c.suffix)}">${esc(s.value)}</b>`
+        : `<b>${esc(s.value)}</b>`;
+      return `<div>${b}<span>${esc(s.label)}</span></div>`;
+    }).join('');
   }
   $('[data-feat-open]', sec)?.addEventListener('click', () => {
     const list = state.visible.length ? state.visible : state.projects;
@@ -406,20 +457,31 @@ function initReveals() {
   els.forEach((e) => io.observe(e));
 }
 
+/** Every number on the page counts up when it arrives, band and case stats alike. */
 function initCounters() {
   $$('[data-count]').forEach((el) => {
     const to = Number(el.dataset.count) || 0;
+    const prefix = el.dataset.prefix || '';
     const suffix = el.dataset.suffix || '';
-    if (REDUCED) { el.textContent = `${to}${suffix}`; return; }
+    const write = (n) => { el.textContent = `${prefix}${n}${suffix}`; };
+    if (REDUCED) { write(to); return; }
+    write(0);
     const obj = { v: 0 };
     ScrollTrigger.create({
-      trigger: el, start: 'top 88%', once: true,
+      trigger: el, start: 'top 90%', once: true,
       onEnter: () => gsap.to(obj, {
         v: to, duration: 1.6, ease: 'power2.out',
-        onUpdate: () => { el.textContent = `${Math.round(obj.v)}${suffix}`; }
+        onUpdate: () => write(Math.round(obj.v))
       })
     });
   });
+}
+
+/** Splits "48h" into 48 + "h" so mixed values can still animate. */
+function countable(raw) {
+  const m = String(raw ?? '').match(/^(\D*)(\d+(?:\.\d+)?)(.*)$/);
+  if (!m) return null;
+  return { prefix: m[1], value: m[2], suffix: m[3] };
 }
 
 function initHero() {
@@ -427,6 +489,94 @@ function initHero() {
   gsap.timeline({ defaults: { ease: 'expo.out' } })
     .from('.hero-title .ln i', { yPercent: 112, duration: 1.15, stagger: 0.08 })
     .from('.hero-sub, .hero-actions', { y: 18, opacity: 0, duration: 0.9, stagger: 0.08 }, 0.32);
+}
+
+/**
+ * One continuous camera push. The footage is the near layer, so it accelerates
+ * past the viewer and blurs out first; the type is the far layer, so it grows
+ * more slowly and is still there after the footage has gone, which is what
+ * makes it read as having been behind the picture all along. It then dissolves
+ * into the section below, so the move never stops.
+ */
+function initHeroZoom() {
+  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+    const hero = $('.hero');
+    const media = $('.hero-media');
+    const center = $('.hero-center');
+    if (!hero || !media || !center) return;
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: hero,
+        start: 'top top',
+        end: '+=140%',
+        pin: true,
+        scrub: 1,
+        anticipatePin: 1,
+        invalidateOnRefresh: true
+      }
+    });
+
+    // near layer: rushes the camera, softens, clears the frame
+    tl.fromTo(media,
+        { scale: 1, filter: 'blur(0px)' },
+        { scale: 3.1, filter: 'blur(14px)', ease: 'power2.in', duration: 1 }, 0)
+      .to(media, { opacity: 0, ease: 'power1.in', duration: 0.42 }, 0.34)
+      .to('.hero-scrim', { opacity: 0, ease: 'none', duration: 0.4 }, 0.3)
+      .to('#gl', { opacity: 0, ease: 'none', duration: 0.4 }, 0.3)
+      // far layer: slower, survives the footage, then follows it out
+      .fromTo(center,
+        { scale: 1 },
+        { scale: 2.05, ease: 'power2.in', duration: 1 }, 0)
+      .to(center, { opacity: 0, ease: 'power2.in', duration: 0.3 }, 0.72);
+
+    return () => {
+      tl.scrollTrigger?.kill();
+      tl.kill();
+      gsap.set([media, center, '.hero-scrim', '#gl'], { clearProps: 'all' });
+    };
+  });
+}
+
+/** A disc that replaces the pointer over the work, labelled for what a click does. */
+function initViewerCursor() {
+  const dot = $('[data-viewer]');
+  if (!dot || REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  gsap.set(dot, { xPercent: -50, yPercent: -50, scale: 0.6, opacity: 0 });
+  const xTo = gsap.quickTo(dot, 'x', { duration: 0.22, ease: 'power3.out' });
+  const yTo = gsap.quickTo(dot, 'y', { duration: 0.22, ease: 'power3.out' });
+  let shown = false;
+
+  // no overwrite here: it would kill the quickTo tweens that follow the pointer
+  const show = (label) => {
+    dot.textContent = label;
+    if (shown) return;
+    shown = true;
+    document.body.classList.add('viewer-on');
+    gsap.to(dot, { opacity: 1, scale: 1, duration: 0.32, ease: 'back.out(2)' });
+  };
+  const hide = () => {
+    if (!shown) return;
+    shown = false;
+    document.body.classList.remove('viewer-on');
+    gsap.to(dot, { opacity: 0, scale: 0.6, duration: 0.25, ease: 'power2.out' });
+  };
+
+  window.addEventListener('pointermove', (e) => {
+    xTo(e.clientX); yTo(e.clientY);
+    const btn = e.target.closest?.('.reel-btn');
+    if (!btn) { hide(); return; }
+    const item = btn.closest('.reel-item');
+    const project = state.projects[Number(item?.dataset.i)];
+    show(project?.video ? 'Play' : 'View');
+  }, { passive: true });
+
+  document.addEventListener('pointerleave', hide);
+  window.addEventListener('blur', hide);
+  // the disc must not sit over the open case view
+  $('#case')?.addEventListener('pointerenter', hide);
 }
 
 function initStatement() {
@@ -520,15 +670,36 @@ function initSmoothScroll() {
   return lenis;
 }
 
+/** Plain crossfade through the stills stack when there is no WebGL context. */
+function heroCrossfade() {
+  const fig = $('[data-hero-media]');
+  if (!fig || fig.dataset.mode !== 'stills') return;
+  const shots = $$('img', fig);
+  if (shots.length < 2 || REDUCED) return;
+  let i = 0;
+  setInterval(() => {
+    shots[i].classList.remove('on');
+    i = (i + 1) % shots.length;
+    shots[i].classList.add('on');
+  }, 4600);
+}
+
 async function initGL() {
   const canvas = $('#gl');
   const frame = $('[data-hero-media]');
-  const src = state.site?.hero?.image;
-  if (REDUCED || !canvas || !frame || !src || frame.dataset.video === '1') return;
+  // the shader only drives the stills stack; a real showreel or the looping
+  // placeholder plays as a normal media element instead
+  if (frame && frame.dataset.mode !== 'stills') return;
+  const sources = heroSources(state.site);
+  if (REDUCED || !canvas || !frame || !sources.length) {
+    heroCrossfade();
+    return;
+  }
   try {
     const { createHeroGL } = await import('./gl.js');
-    state.gl = createHeroGL({ canvas, frame, src, paper: '#F1F1EF', accent: '#E4381B' });
+    state.gl = createHeroGL({ canvas, frame, sources, paper: '#F1F1EF', accent: '#E4381B' });
     window.__gl = state.gl;
+    if (!state.gl) heroCrossfade();   // no WebGL context: the DOM stack cycles instead
   } catch (err) {
     // no WebGL or three.js unavailable: the DOM image stays visible, graded in CSS
     console.warn('Hero WebGL layer unavailable, using the plain image.', err);
@@ -597,13 +768,16 @@ async function boot() {
 
   if (window.gsap) {
     initHero();
+    initHeroZoom();
     initStatement();
     initEventTrail();
     initMagnetic();
+    initViewerCursor();
     initCounters();
     initReel();
     initMarquee();
     state.lenis = initSmoothScroll();
+    window.__lenis = state.lenis;
   }
 
   await initGL();

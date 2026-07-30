@@ -42,7 +42,8 @@ content:
           - { name: sub, label: Supporting line (20 words maximum), type: text }
           - { name: ctaPrimary, label: Main button label, type: string }
           - { name: image, label: Opening image, type: image }
-          - { name: video, label: 'Opening video instead of the image (Vimeo, YouTube, Drive or mp4 link). Leave empty to keep the image.', type: string }
+          - { name: video, label: 'Showreel that plays behind the headline. Paste an mp4 link for the best result. Leave empty to keep the looping placeholder below.', type: string }
+          - { name: loop, label: 'Looping placeholder played when no showreel is set. Replace this with real footage when you have it.', type: image }
 
       - { name: statement, label: Big statement sentence, type: text }
 

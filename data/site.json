@@ -15,17 +15,31 @@
     "sub": "Videography, photography, motion graphics and government event coverage. Ten years in the UAE.",
     "ctaPrimary": "See the work",
     "image": "assets/uploads/placeholder-hero.jpg",
-    "video": ""
+    "video": "",
+    "loop": "assets/uploads/placeholder-header-loop.webp",
+    "background": [
+      {
+        "image": "assets/uploads/placeholder-work-04.jpg"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-02.jpg"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-12.jpg"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-07.jpg"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-06.jpg"
+      }
+    ]
   },
   "statement": "A decade behind the lens, from national ceremonies to frames no camera could reach.",
   "events": {
     "heading": "Government\nevent coverage.",
     "body": "Ceremonies, summits and national days. Multi camera crews, live feeds and same day delivery.",
     "images": [
-      {
-        "image": "assets/uploads/placeholder-work-01.jpg",
-        "caption": "Festival coverage"
-      },
       {
         "image": "assets/uploads/placeholder-work-09.jpg",
         "caption": "Ceremony interior"
@@ -53,6 +67,10 @@
       {
         "image": "assets/uploads/placeholder-work-06.jpg",
         "caption": "National day"
+      },
+      {
+        "image": "assets/uploads/placeholder-craft-photography.jpg",
+        "caption": "Crew on location"
       }
     ]
   },

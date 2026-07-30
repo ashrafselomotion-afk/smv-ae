@@ -27,8 +27,11 @@ const FRAG = /* glsl */`
   precision highp float;
 
   uniform sampler2D uTex;
+  uniform sampler2D uTexNext;
+  uniform float uMix;        // 0 = current frame, 1 = next frame
   uniform vec2  uPlane;
   uniform vec2  uTexSize;
+  uniform vec2  uTexSizeNext;
   uniform vec2  uPointer;   // 0..1 inside the frame
   uniform float uPointerOn; // 0 when the pointer left
   uniform float uTime;
@@ -38,9 +41,9 @@ const FRAG = /* glsl */`
   uniform vec3  uAccent;
   varying vec2 vUv;
 
-  vec2 cover(vec2 uv){
+  vec2 cover(vec2 uv, vec2 texSize){
     float pa = uPlane.x / max(uPlane.y, 1.0);
-    float ta = uTexSize.x / max(uTexSize.y, 1.0);
+    float ta = texSize.x / max(texSize.y, 1.0);
     vec2 r = vec2(min(pa / ta, 1.0), min(ta / pa, 1.0));
     return uv * r + (1.0 - r) * 0.5;
   }
@@ -61,14 +64,25 @@ const FRAG = /* glsl */`
     // scroll velocity squeezes the frame vertically, like a camera settling
     uv.y += uVel * (0.5 - vUv.y) * 0.05;
 
-    vec2 tuv = cover(uv);
-
     // very slight channel spread, only while moving
     float sp = abs(uVel) * 0.006;
-    vec3 c;
-    c.r = texture2D(uTex, tuv + vec2(sp, 0.0)).r;
-    c.g = texture2D(uTex, tuv).g;
-    c.b = texture2D(uTex, tuv - vec2(sp, 0.0)).b;
+
+    // the outgoing frame eases back a touch as the next one arrives
+    vec2 uvA = (uv - 0.5) * (1.0 + uMix * 0.06) + 0.5;
+    vec2 tA = cover(uvA, uTexSize);
+    vec2 tB = cover(uv, uTexSizeNext);
+
+    vec3 a, b;
+    a.r = texture2D(uTex, tA + vec2(sp, 0.0)).r;
+    a.g = texture2D(uTex, tA).g;
+    a.b = texture2D(uTex, tA - vec2(sp, 0.0)).b;
+    b.r = texture2D(uTexNext, tB + vec2(sp, 0.0)).r;
+    b.g = texture2D(uTexNext, tB).g;
+    b.b = texture2D(uTexNext, tB - vec2(sp, 0.0)).b;
+
+    // dissolve on a soft diagonal so the cut has a direction
+    float edge = smoothstep(0.0, 1.0, uMix * 1.5 - (vUv.x * 0.25 + vUv.y * 0.15));
+    vec3 c = mix(a, b, edge);
 
     /* studio grade, matched by --grade in CSS:
        hold most of the colour, lift the blacks toward paper, cool the shadows,
@@ -100,12 +114,13 @@ const toLinearVec3 = (hex) => {
 };
 
 /**
- * @param {HTMLCanvasElement} canvas  fixed, full viewport, pointer-events none
- * @param {HTMLElement}       frame   the DOM element whose rect the plane fills
- * @param {string}            src     image url
+ * @param {HTMLCanvasElement} canvas   fixed, full viewport, pointer-events none
+ * @param {HTMLElement}       frame    the DOM element whose rect the plane fills
+ * @param {string[]}          sources  work stills, cycled with a dissolve
  */
-export function createHeroGL({ canvas, frame, src, paper = '#F1F1EF', accent = '#E4381B' }) {
-  if (!canvas || !frame || !src) return null;
+export function createHeroGL({ canvas, frame, sources = [], paper = '#F1F1EF', accent = '#E4381B' }) {
+  const srcs = sources.filter(Boolean);
+  if (!canvas || !frame || !srcs.length) return null;
 
   let renderer;
   try {
@@ -124,8 +139,11 @@ export function createHeroGL({ canvas, frame, src, paper = '#F1F1EF', accent = '
 
   const uniforms = {
     uTex: { value: null },
+    uTexNext: { value: null },
+    uMix: { value: 0 },
     uPlane: { value: new THREE.Vector2(1, 1) },
     uTexSize: { value: new THREE.Vector2(1, 1) },
+    uTexSizeNext: { value: new THREE.Vector2(1, 1) },
     uPointer: { value: new THREE.Vector2(0.5, 0.5) },
     uPointerOn: { value: 0 },
     uTime: { value: 0 },
@@ -141,18 +159,62 @@ export function createHeroGL({ canvas, frame, src, paper = '#F1F1EF', accent = '
   mesh.visible = false;
   scene.add(mesh);
 
-  new THREE.TextureLoader().load(src, (tex) => {
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.generateMipmaps = false;
-    tex.minFilter = THREE.LinearFilter;
-    uniforms.uTex.value = tex;
-    uniforms.uTexSize.value.set(tex.image.width, tex.image.height);
-    frame.classList.add('gl-ready');   // hides the DOM img, keeps its box
+  const loader = new THREE.TextureLoader();
+  const textures = [];
+  let loaded = 0;
+
+  srcs.forEach((src, i) => {
+    loader.load(src, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.generateMipmaps = false;
+      tex.minFilter = THREE.LinearFilter;
+      textures[i] = tex;
+      loaded += 1;
+      if (loaded === 1) {
+        uniforms.uTex.value = tex;
+        uniforms.uTexSize.value.set(tex.image.width, tex.image.height);
+        uniforms.uTexNext.value = tex;
+        uniforms.uTexSizeNext.value.copy(uniforms.uTexSize.value);
+        frame.classList.add('gl-ready');   // hides the DOM img, keeps its box
+      }
+    });
   });
 
   let W = 0, H = 0, running = true, rafId = 0;
   let ptr = { x: 0.5, y: 0.5, on: 0 };
   let vel = 0, velTarget = 0, reveal = 0;
+
+  // frame cycling: hold, then dissolve into the next still
+  const HOLD = 4.2, FADE = 1.5;
+  let shown = 0, clock = 0, fading = false;
+
+  function advance(dt) {
+    if (textures.filter(Boolean).length < 2) return;
+    clock += dt;
+    if (!fading) {
+      if (clock < HOLD) return;
+      let next = (shown + 1) % srcs.length;
+      let guard = 0;
+      while (!textures[next] && guard < srcs.length) { next = (next + 1) % srcs.length; guard += 1; }
+      if (!textures[next] || next === shown) { clock = 0; return; }
+      uniforms.uTexNext.value = textures[next];
+      uniforms.uTexSizeNext.value.set(textures[next].image.width, textures[next].image.height);
+      fading = true; clock = 0;
+      uniforms.uMix.value = 0;
+      shownNext = next;
+      return;
+    }
+    const t = Math.min(1, clock / FADE);
+    uniforms.uMix.value = t * t * (3 - 2 * t);   // smoothstep
+    if (t < 1) return;
+    // the incoming frame becomes the current one
+    shown = shownNext;
+    uniforms.uTex.value = uniforms.uTexNext.value;
+    uniforms.uTexSize.value.copy(uniforms.uTexSizeNext.value);
+    uniforms.uMix.value = 0;
+    fading = false; clock = 0;
+  }
+  let shownNext = 0;
 
   function resize() {
     // the canvas is the reference, not innerWidth: getBoundingClientRect works in
@@ -176,14 +238,20 @@ export function createHeroGL({ canvas, frame, src, paper = '#F1F1EF', accent = '
     ptr.on = inside ? 1 : 0;
   }
 
+  let prevT = 0;
   function frameLoop(t) {
     if (!running) return;
     rafId = requestAnimationFrame(frameLoop);
+
+    const dt = prevT ? Math.min(0.05, (t - prevT) * 0.001) : 0;
+    prevT = t;
 
     const r = frame.getBoundingClientRect();
     const onScreen = r.bottom > -80 && r.top < H + 80 && r.width > 1 && !!uniforms.uTex.value;
     mesh.visible = onScreen;
     if (!onScreen) return;
+
+    advance(dt);
 
     mesh.scale.set(r.width, r.height, 1);
     mesh.position.set(r.left + r.width / 2 - W / 2, -(r.top + r.height / 2) + H / 2, 0);
@@ -218,7 +286,7 @@ export function createHeroGL({ canvas, frame, src, paper = '#F1F1EF', accent = '
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
-      if (uniforms.uTex.value) uniforms.uTex.value.dispose();
+      textures.forEach((t) => t?.dispose());
       mesh.material.dispose();
       geometry.dispose();
       renderer.dispose();

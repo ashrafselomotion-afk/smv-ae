@@ -1,32 +1,6 @@
 {
   "projects": [
     {
-      "id": "p01",
-      "title": "Festival Coverage, Downtown",
-      "client": "Cultural authority",
-      "year": "2025",
-      "category": "events",
-      "image": "assets/uploads/placeholder-work-01.jpg",
-      "video": "",
-      "featured": true,
-      "challenge": "Seven venues, one broadcast window. Live multi camera coverage, same day socials and an archive edit, delivered while the festival was still running.",
-      "stats": [
-        {
-          "value": "7",
-          "label": "Venues"
-        },
-        {
-          "value": "22",
-          "label": "Camera operators"
-        },
-        {
-          "value": "48h",
-          "label": "Continuous coverage"
-        }
-      ],
-      "description": "End to end coverage of a city wide festival: broadcast feed, aerial units, a photo desk and a same night highlight film."
-    },
-    {
       "id": "p02",
       "title": "Skyline Before Sunrise",
       "client": "Editorial commission",
@@ -104,7 +78,23 @@
       "category": "events",
       "image": "assets/uploads/placeholder-work-09.jpg",
       "video": "",
-      "description": "Full ceremony coverage with a two hour turnaround highlight cut for national channels."
+      "description": "Full ceremony coverage with a two hour turnaround highlight cut for national channels.",
+      "featured": true,
+      "challenge": "A sealed venue, one rehearsal and no second take. Two camera positions on the floor, a locked wide on the stage and a highlight cut delivered to national channels the same evening.",
+      "stats": [
+        {
+          "value": "6",
+          "label": "Cameras"
+        },
+        {
+          "value": "2h",
+          "label": "Turnaround"
+        },
+        {
+          "value": "4",
+          "label": "Channels served"
+        }
+      ]
     },
     {
       "id": "p10",
