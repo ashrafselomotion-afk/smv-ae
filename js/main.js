@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     lens stage       camera pushes into an aperture, blades close, then open onto the statement
+     lens stage       a 3D cinema camera turns to face us, we fly through its glass into the statement
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
      magnetic buttons small lean toward the cursor, feedback on the primary action
@@ -549,86 +549,74 @@ function splitLines(p) {
 }
 
 /**
- * The camera does not pull back, it goes in. The footage pushes toward the
- * viewer while an eight bladed aperture closes down over it, until all that is
- * left is the opening. Behind that opening the frame changes, the blades open
- * again, and what comes back out is the statement, arriving on the same centred
- * axis and settling into place. One move, in and then out through the glass.
+ * The camera does not pull back, it goes in. The header footage pushes toward
+ * the viewer, a cinema camera turns to face us and grows until its glass fills
+ * the frame, the iris shuts and punches open, and we come out the far side of
+ * the lens into the statement, on the same centred axis.
+ *
+ * The 3D rig is loaded on demand: if three.js or WebGL is unavailable the whole
+ * stage is skipped and the two sections behave as ordinary stacked sections.
  */
-function initLensStage() {
-  gsap.matchMedia().add('(min-width: 761px) and (prefers-reduced-motion: no-preference)', () => {
-    const stage = $('[data-stage]');
-    const hero = $('.hero');
-    const media = $('.hero-media');
-    const center = $('.hero-center');
-    const statement = $('.statement');
-    const poly = $('[data-iris]');
-    const rings = $('[data-rings]');
-    const p = $('[data-statement]');
-    if (!stage || !hero || !statement || !poly || !rings || !p) return;
+async function initLensStage() {
+  if (!window.matchMedia('(min-width: 761px) and (prefers-reduced-motion: no-preference)').matches) return;
 
-    stage.classList.add('stage-on');
-    state.stageOn = true;
+  const stage = $('[data-stage]');
+  const hero = $('.hero');
+  const media = $('.hero-media');
+  const center = $('.hero-center');
+  const statement = $('.statement');
+  const canvas = $('[data-cam]');
+  const p = $('[data-statement]');
+  if (!stage || !hero || !statement || !canvas || !p) return;
 
-    const split = splitLines(p);
-    const iris = { r: 150, rot: 0 };
-    const ringEls = Array.from(rings.children);
+  stage.classList.add('stage-on');
 
-    // one draw call keeps the blades and the barrel rings on the same geometry
-    const draw = () => {
-      const pts = [];
-      for (let i = 0; i < 8; i += 1) {
-        const a = iris.rot + (i * Math.PI) / 4;
-        pts.push(`${(50 + iris.r * Math.cos(a)).toFixed(2)},${(50 + iris.r * Math.sin(a)).toFixed(2)}`);
-      }
-      poly.setAttribute('points', pts.join(' '));
-      ringEls.forEach((c, k) => c.setAttribute('r', Math.max(0, iris.r * (1.16 + k * 0.15)).toFixed(2)));
-    };
-    draw();
+  let rig = null;
+  try {
+    const { createCameraRig } = await import('./camera3d.js');
+    rig = createCameraRig({ canvas });
+  } catch (err) {
+    console.warn('Camera rig unavailable, falling back to stacked sections.', err);
+  }
+  if (!rig) { stage.classList.remove('stage-on'); return; }
 
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: stage,
-        start: 'top top',
-        end: '+=260%',
-        pin: true,
-        scrub: 1,
-        anticipatePin: 1,
-        invalidateOnRefresh: true
-      }
-    });
+  state.stageOn = true;
+  state.rig = rig;
+  window.__rig = rig;
 
-    tl
-      // 1. push in
-      .fromTo(media, { scale: 1 }, { scale: 2.7, ease: 'power2.in', duration: 0.52 }, 0)
-      .to(center, { scale: 1.6, ease: 'power2.in', duration: 0.5 }, 0)
-      .to(center, { opacity: 0, ease: 'power1.in', duration: 0.16 }, 0.26)
-      .to('.hero-scrim', { opacity: 0, ease: 'none', duration: 0.3 }, 0.2)
-      // 2. the aperture closes down to the opening
-      .to(iris, { r: 8.5, rot: 0.58, ease: 'power2.inOut', duration: 0.46, onUpdate: draw }, 0.06)
-      .to(rings, { opacity: 1, ease: 'none', duration: 0.16 }, 0.3)
-      // 3. behind the opening, the frame changes
-      .to(hero, { opacity: 0, duration: 0.05 }, 0.52)
-      .to('#gl', { opacity: 0, duration: 0.05 }, 0.52)
-      .to(statement, { opacity: 1, duration: 0.05 }, 0.52)
-      // 4. the blades open and we come out with it
-      .to(iris, { r: 155, rot: 1.2, ease: 'power2.out', duration: 0.44, onUpdate: draw }, 0.56)
-      .to(rings, { opacity: 0, ease: 'none', duration: 0.2 }, 0.58)
-      .fromTo(statement, { scale: 1.4 }, { scale: 1, ease: 'power2.out', duration: 0.44 }, 0.56)
-      .fromTo(split.lines,
-        { yPercent: 90, opacity: 0, filter: 'blur(14px)' },
-        { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.05, ease: 'power3.out', duration: 0.26 },
-        0.62);
+  const split = splitLines(p);
 
-    return () => {
-      tl.scrollTrigger?.kill();
-      tl.kill();
-      split.revert();
-      stage.classList.remove('stage-on');
-      state.stageOn = false;
-      gsap.set([media, center, hero, statement, rings, '.hero-scrim', '#gl'], { clearProps: 'all' });
-    };
+  const tl = gsap.timeline({
+    scrollTrigger: {
+      trigger: stage,
+      start: 'top top',
+      end: '+=300%',
+      pin: true,
+      scrub: 1,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => rig.setProgress(self.progress)
+    }
   });
+
+  tl
+    // 1. the footage pushes in and hands over to the object
+    .fromTo(media, { scale: 1 }, { scale: 2.2, ease: 'power2.in', duration: 0.42 }, 0)
+    .to(center, { scale: 1.45, ease: 'power2.in', duration: 0.34 }, 0)
+    .to(center, { opacity: 0, ease: 'power1.in', duration: 0.14 }, 0.18)
+    .to(['.hero-scrim', media], { opacity: 0, ease: 'power1.in', duration: 0.22 }, 0.22)
+    // 2. the camera owns the frame while we fly into the glass (rig.setProgress)
+    .to(hero, { opacity: 0, duration: 0.04 }, 0.46)
+    .to('#gl', { opacity: 0, duration: 0.04 }, 0.46)
+    // 3. out the far side, the statement is what is there
+    .to(statement, { opacity: 1, duration: 0.05 }, 0.7)
+    .fromTo(statement, { scale: 1.45 }, { scale: 1, ease: 'power2.out', duration: 0.26 }, 0.7)
+    .fromTo(split.lines,
+      { yPercent: 90, opacity: 0, filter: 'blur(14px)' },
+      { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.04, ease: 'power3.out', duration: 0.18 },
+      0.74);
+
+  ScrollTrigger.refresh();
 }
 
 /** A disc that replaces the pointer over the work, labelled for what a click does. */
@@ -891,7 +879,7 @@ async function boot() {
   if (window.gsap) {
     initHero();
     prepareStatement();
-    initLensStage();          // arms the stage and sets state.stageOn
+    await initLensStage();    // loads the 3D rig, sets state.stageOn on success
     initStatementFallback();  // only runs when the stage is not armed
     initEventTrail();
     initMagnetic();

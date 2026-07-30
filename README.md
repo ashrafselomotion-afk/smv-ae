@@ -47,7 +47,8 @@ index.html          markup and section order
 css/main.css        design tokens, layout, motion fallbacks
 css/fonts.css       self hosted Archivo and Geist Mono
 js/main.js          renders every section from the JSON, wires the motion
-js/gl.js            the WebGL frame behind the opening image
+js/gl.js            optional WebGL treatment for the opening stills
+js/camera3d.js      the cinema camera, built from primitives, and the fly through
 data/site.json      all site copy and media
 data/projects.json  the work
 .pages.yml          defines the admin screens
@@ -73,11 +74,12 @@ choreography, Lenis for continuous scrolling, three.js for the opening frame.
   the admin and it becomes a real video element instead. Replace
   `placeholder-header-loop.webp` with a compressed mp4 when you have one.
   Scrolling does not pull back, it pushes in: the footage drives toward the
-  viewer while an eight bladed aperture closes over it down to the opening,
-  the frame behind that opening changes, then the blades open again and the
-  statement is what comes back out, landing on the same centred axis. The
-  header and the statement are one pinned stage for this reason. Below 760px,
-  and under reduced motion, they are simply two stacked sections.
+  viewer, a cinema camera turns to face us and grows until its glass fills the
+  frame, the iris shuts and punches open, and we come out the far side of the
+  lens into the statement, landing on the same centred axis. The header and the
+  statement are one pinned stage for this reason. Below 760px, and under
+  reduced motion, they are simply two stacked sections and three.js is never
+  even downloaded.
 - **The work pans sideways.** The work section pins and scrolls horizontally on
   screens wider than 760px. Below that, and for anyone who prefers reduced
   motion, it unrolls into a normal vertical list.
