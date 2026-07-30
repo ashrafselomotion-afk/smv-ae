@@ -13,9 +13,9 @@
   --paper:#F1F1EF;
   --paper-sunk:#E7E7E3;
   --ink:#16171A;
-  --ink-70:rgba(22,23,26,.70);
-  --ink-50:rgba(22,23,26,.50);
-  --ink-30:rgba(22,23,26,.30);
+  --ink-70:rgba(22,23,26,.70);   /* 6.3:1 on paper */
+  --ink-50:rgba(22,23,26,.62);   /* 4.9:1, the floor for 11px labels */
+  --ink-30:rgba(22,23,26,.60);   /* 4.6:1, the statement before it is read */
   --line:rgba(22,23,26,.14);
   --line-soft:rgba(22,23,26,.08);
   --accent:#E4381B;
@@ -159,7 +159,7 @@ h1,h2,h3{
 .hero-copy{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
 .hero-title{
   /* sized so both lines stay unwrapped in the left column at every width */
-  font-size:clamp(2.15rem,4.7vw,5.1rem);
+  font-size:clamp(2.15rem,4.6vw,4.8rem);
   font-variation-settings:'wdth' 106;
   margin-bottom:clamp(18px,2.4vh,32px);
 }
