@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     statement        lines rise out of focus and resolve, the header's blur in reverse
+     lens stage       camera pushes into an aperture, blades close, then open onto the statement
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
      magnetic buttons small lean toward the cursor, feedback on the primary action
@@ -525,25 +525,72 @@ function initHero() {
     .from('.hero-sub, .hero-actions', { y: 18, opacity: 0, duration: 0.9, stagger: 0.08 }, 0.32);
 }
 
+/** Writes the statement copy and its accent phrase. Split happens later. */
+function prepareStatement() {
+  const p = $('[data-statement]');
+  if (!p) return null;
+  const accent = state.site?.statementAccent;
+  const full = p.textContent.trim();
+  if (accent && full.includes(accent)) {
+    // take any closing punctuation with the phrase, so the full stop is not
+    // left sitting in ink at the end of a coloured line
+    const re = new RegExp(esc(accent).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.!?,]?');
+    p.innerHTML = esc(full).replace(re, (m) => `<span class="hi">${m}</span>`);
+  } else {
+    p.innerHTML = esc(full);
+  }
+  return p;
+}
+
+function splitLines(p) {
+  if (typeof window.SplitText !== 'function') return { lines: [p], revert() {} };
+  const s = new SplitText(p, { type: 'lines', linesClass: 'st-line', mask: 'lines' });
+  return { lines: s.lines.length ? s.lines : [p], revert: () => s.revert() };
+}
+
 /**
- * One continuous camera push. The footage is the near layer, so it accelerates
- * past the viewer and blurs out first; the type is the far layer, so it grows
- * more slowly and is still there after the footage has gone, which is what
- * makes it read as having been behind the picture all along. It then dissolves
- * into the section below, so the move never stops.
+ * The camera does not pull back, it goes in. The footage pushes toward the
+ * viewer while an eight bladed aperture closes down over it, until all that is
+ * left is the opening. Behind that opening the frame changes, the blades open
+ * again, and what comes back out is the statement, arriving on the same centred
+ * axis and settling into place. One move, in and then out through the glass.
  */
-function initHeroZoom() {
-  gsap.matchMedia().add('(prefers-reduced-motion: no-preference)', () => {
+function initLensStage() {
+  gsap.matchMedia().add('(min-width: 761px) and (prefers-reduced-motion: no-preference)', () => {
+    const stage = $('[data-stage]');
     const hero = $('.hero');
     const media = $('.hero-media');
     const center = $('.hero-center');
-    if (!hero || !media || !center) return;
+    const statement = $('.statement');
+    const poly = $('[data-iris]');
+    const rings = $('[data-rings]');
+    const p = $('[data-statement]');
+    if (!stage || !hero || !statement || !poly || !rings || !p) return;
+
+    stage.classList.add('stage-on');
+    state.stageOn = true;
+
+    const split = splitLines(p);
+    const iris = { r: 150, rot: 0 };
+    const ringEls = Array.from(rings.children);
+
+    // one draw call keeps the blades and the barrel rings on the same geometry
+    const draw = () => {
+      const pts = [];
+      for (let i = 0; i < 8; i += 1) {
+        const a = iris.rot + (i * Math.PI) / 4;
+        pts.push(`${(50 + iris.r * Math.cos(a)).toFixed(2)},${(50 + iris.r * Math.sin(a)).toFixed(2)}`);
+      }
+      poly.setAttribute('points', pts.join(' '));
+      ringEls.forEach((c, k) => c.setAttribute('r', Math.max(0, iris.r * (1.16 + k * 0.15)).toFixed(2)));
+    };
+    draw();
 
     const tl = gsap.timeline({
       scrollTrigger: {
-        trigger: hero,
+        trigger: stage,
         start: 'top top',
-        end: '+=140%',
+        end: '+=260%',
         pin: true,
         scrub: 1,
         anticipatePin: 1,
@@ -551,23 +598,35 @@ function initHeroZoom() {
       }
     });
 
-    // near layer: rushes the camera, softens, clears the frame
-    tl.fromTo(media,
-        { scale: 1, filter: 'blur(0px)' },
-        { scale: 3.1, filter: 'blur(14px)', ease: 'power2.in', duration: 1 }, 0)
-      .to(media, { opacity: 0, ease: 'power1.in', duration: 0.42 }, 0.34)
-      .to('.hero-scrim', { opacity: 0, ease: 'none', duration: 0.4 }, 0.3)
-      .to('#gl', { opacity: 0, ease: 'none', duration: 0.4 }, 0.3)
-      // far layer: slower, survives the footage, then follows it out
-      .fromTo(center,
-        { scale: 1 },
-        { scale: 2.05, ease: 'power2.in', duration: 1 }, 0)
-      .to(center, { opacity: 0, ease: 'power2.in', duration: 0.3 }, 0.72);
+    tl
+      // 1. push in
+      .fromTo(media, { scale: 1 }, { scale: 2.7, ease: 'power2.in', duration: 0.52 }, 0)
+      .to(center, { scale: 1.6, ease: 'power2.in', duration: 0.5 }, 0)
+      .to(center, { opacity: 0, ease: 'power1.in', duration: 0.16 }, 0.26)
+      .to('.hero-scrim', { opacity: 0, ease: 'none', duration: 0.3 }, 0.2)
+      // 2. the aperture closes down to the opening
+      .to(iris, { r: 8.5, rot: 0.58, ease: 'power2.inOut', duration: 0.46, onUpdate: draw }, 0.06)
+      .to(rings, { opacity: 1, ease: 'none', duration: 0.16 }, 0.3)
+      // 3. behind the opening, the frame changes
+      .to(hero, { opacity: 0, duration: 0.05 }, 0.52)
+      .to('#gl', { opacity: 0, duration: 0.05 }, 0.52)
+      .to(statement, { opacity: 1, duration: 0.05 }, 0.52)
+      // 4. the blades open and we come out with it
+      .to(iris, { r: 155, rot: 1.2, ease: 'power2.out', duration: 0.44, onUpdate: draw }, 0.56)
+      .to(rings, { opacity: 0, ease: 'none', duration: 0.2 }, 0.58)
+      .fromTo(statement, { scale: 1.4 }, { scale: 1, ease: 'power2.out', duration: 0.44 }, 0.56)
+      .fromTo(split.lines,
+        { yPercent: 90, opacity: 0, filter: 'blur(14px)' },
+        { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.05, ease: 'power3.out', duration: 0.26 },
+        0.62);
 
     return () => {
       tl.scrollTrigger?.kill();
       tl.kill();
-      gsap.set([media, center, '.hero-scrim', '#gl'], { clearProps: 'all' });
+      split.revert();
+      stage.classList.remove('stage-on');
+      state.stageOn = false;
+      gsap.set([media, center, hero, statement, rings, '.hero-scrim', '#gl'], { clearProps: 'all' });
     };
   });
 }
@@ -618,22 +677,13 @@ function initViewerCursor() {
  * the same way in reverse: each line rises out of depth, out of focus, and
  * resolves. One continuous focus pull rather than a separate effect.
  */
-function initStatement() {
+/**
+ * Narrow screens and reduced motion never get the lens, so the statement keeps
+ * a reveal of its own: the lines rise out of focus and resolve in place.
+ */
+function initStatementFallback() {
   const p = $('[data-statement]');
-  if (!p) return;
-
-  const accent = state.site?.statementAccent;
-  const full = p.textContent.trim();
-  if (accent && full.includes(accent)) {
-    // take any closing punctuation with the phrase, so the full stop is not
-    // left sitting in ink at the end of a coloured line
-    const re = new RegExp(esc(accent).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.!?,]?');
-    p.innerHTML = esc(full).replace(re, (m) => `<span class="hi">${m}</span>`);
-  } else {
-    p.innerHTML = esc(full);
-  }
-
-  if (REDUCED) return;
+  if (!p || REDUCED || state.stageOn) return;
 
   let split = null;
   let tween = null;
@@ -642,30 +692,14 @@ function initStatement() {
     tween?.scrollTrigger?.kill();
     tween?.kill();
     split?.revert();
-
-    const hasPlugin = typeof window.SplitText === 'function';
-    if (hasPlugin) {
-      split = new SplitText(p, { type: 'lines', linesClass: 'st-line', mask: 'lines' });
-    }
-    const targets = hasPlugin && split.lines.length ? split.lines : [p];
-
-    gsap.set(targets, {
-      yPercent: 108, rotateX: -46, opacity: 0,
-      filter: 'blur(18px)', transformOrigin: '50% 100% -60px'
-    });
-    tween = gsap.to(targets, {
-      yPercent: 0, rotateX: 0, opacity: 1, filter: 'blur(0px)',
-      ease: 'power3.out', stagger: 0.16, duration: 1,
-      scrollTrigger: {
-        trigger: p,
-        start: 'top 92%',
-        end: 'center 58%',
-        scrub: 1,
-        invalidateOnRefresh: true
-      }
+    split = splitLines(p);
+    gsap.set(split.lines, { yPercent: 100, opacity: 0, filter: 'blur(16px)' });
+    tween = gsap.to(split.lines, {
+      yPercent: 0, opacity: 1, filter: 'blur(0px)',
+      ease: 'power3.out', stagger: 0.14, duration: 1,
+      scrollTrigger: { trigger: p, start: 'top 92%', end: 'center 60%', scrub: 1, invalidateOnRefresh: true }
     });
   };
-
   build();
 
   // line breaks change with the viewport, so the masks have to be rebuilt
@@ -856,8 +890,9 @@ async function boot() {
 
   if (window.gsap) {
     initHero();
-    initHeroZoom();
-    initStatement();
+    prepareStatement();
+    initLensStage();          // arms the stage and sets state.stageOn
+    initStatementFallback();  // only runs when the stage is not armed
     initEventTrail();
     initMagnetic();
     initViewerCursor();

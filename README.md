@@ -68,12 +68,16 @@ choreography, Lenis for continuous scrolling, three.js for the opening frame.
   colour everywhere, raise the saturation in `--grade` and the `mix()` value in
   `js/gl.js`.
 - **Square corners everywhere.** No rounded corners anywhere, on purpose.
-- **The header plays.** A looping placeholder built from the work stills sits
-  behind the headline. Set a showreel link in the admin and it becomes a real
-  video element instead. Scrolling pushes the camera through it: the footage is
-  the near layer so it accelerates, blurs and clears first, and the type is the
-  far layer, which is what makes it read as having been behind the picture.
-  Replace `placeholder-header-loop.webp` with a compressed mp4 when you have one.
+- **The header plays, and the scroll goes into a lens.** A looping placeholder
+  built from the work stills sits behind the headline. Set a showreel link in
+  the admin and it becomes a real video element instead. Replace
+  `placeholder-header-loop.webp` with a compressed mp4 when you have one.
+  Scrolling does not pull back, it pushes in: the footage drives toward the
+  viewer while an eight bladed aperture closes over it down to the opening,
+  the frame behind that opening changes, then the blades open again and the
+  statement is what comes back out, landing on the same centred axis. The
+  header and the statement are one pinned stage for this reason. Below 760px,
+  and under reduced motion, they are simply two stacked sections.
 - **The work pans sideways.** The work section pins and scrolls horizontally on
   screens wider than 760px. Below that, and for anyone who prefers reduced
   motion, it unrolls into a normal vertical list.

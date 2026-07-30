@@ -183,6 +183,28 @@ h1,h2,h3{
 }
 .btn-line:hover{color:var(--accent-deep);border-color:var(--accent-deep)}
 
+/* ============================ the lens stage ============================
+   By default the header and the statement are two ordinary stacked sections,
+   which is what mobile, no-JS and reduced-motion visitors get. When the
+   transition is armed, JS adds .stage-on and they become two layers of one
+   pinned frame so the camera can travel from one into the other. */
+.lens{display:none}
+
+.stage-on{position:relative;height:100dvh;overflow:hidden}
+.stage-on > .hero,
+.stage-on > .statement{
+  position:absolute;inset:0;min-height:0;
+  will-change:transform,opacity;
+}
+.stage-on > .statement{opacity:0}
+.stage-on .lens{
+  display:block;position:absolute;inset:0;z-index:3;pointer-events:none;
+}
+.stage-on .lens svg{width:100%;height:100%;display:block}
+.lens-fill{fill:var(--paper)}
+.lens-rings{fill:none;stroke:var(--ink);stroke-width:.25;opacity:0}
+.lens-rings circle:nth-child(2){stroke:var(--accent);stroke-width:.35}
+
 /* ============================ 1 / hero ============================ */
 .hero{
   position:relative;z-index:var(--z-content);
