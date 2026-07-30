@@ -2,154 +2,139 @@
   "projects": [
     {
       "id": "p01",
-      "title": "Union Day — National Parade",
-      "client": "Federal government entity (placeholder)",
-      "year": "2024",
+      "title": "Festival Coverage, Downtown",
+      "client": "Cultural authority",
+      "year": "2025",
       "category": "events",
-      "size": "sp7",
-      "image": "",
+      "image": "assets/uploads/placeholder-work-01.jpg",
       "video": "",
-      "hue": 38,
       "featured": true,
-      "challenge": "Seven venues, one broadcast window. Live multi-cam coverage, same-day socials and a national archive edit — delivered while the event was still running.",
+      "challenge": "Seven venues, one broadcast window. Live multi camera coverage, same day socials and an archive edit, delivered while the festival was still running.",
       "stats": [
-        { "value": "7", "label": "Venues" },
-        { "value": "22", "label": "Camera operators" },
-        { "value": "48h", "label": "Continuous coverage" }
+        {
+          "value": "7",
+          "label": "Venues"
+        },
+        {
+          "value": "22",
+          "label": "Camera operators"
+        },
+        {
+          "value": "48h",
+          "label": "Continuous coverage"
+        }
       ],
-      "description": "End-to-end coverage of a national celebration: broadcast feed, aerial units, a photo desk and a same-night highlight film."
+      "description": "End to end coverage of a city wide festival: broadcast feed, aerial units, a photo desk and a same night highlight film."
     },
     {
       "id": "p02",
-      "title": "Desert Bloom — AI Concept Film",
-      "client": "Internal · R&D",
-      "year": "2025",
-      "category": "ai",
-      "size": "sp5",
-      "image": "",
+      "title": "Skyline Before Sunrise",
+      "client": "Editorial commission",
+      "year": "2024",
+      "category": "photo",
+      "image": "assets/uploads/placeholder-work-02.jpg",
       "video": "",
-      "hue": 285,
-      "description": "A fully AI-generated short exploring landscapes no camera can reach. Generative video, hand-directed frame by frame."
+      "description": "A photographic study of the city at its quietest hour. Long exposures, empty roads, first light."
     },
     {
       "id": "p03",
-      "title": "Skyline, Before Sunrise",
-      "client": "Editorial (placeholder)",
-      "year": "2023",
-      "category": "photo",
-      "size": "sp4",
-      "image": "",
+      "title": "Cloud Systems, Generated",
+      "client": "Studio research",
+      "year": "2025",
+      "category": "ai",
+      "image": "assets/uploads/placeholder-work-03.jpg",
       "video": "",
-      "hue": 210,
-      "description": "A photographic study of the city in its quietest hour — long exposures, empty highways, first light."
+      "description": "Generated weather plates directed frame by frame, graded to cut against real aerial footage."
     },
     {
       "id": "p04",
-      "title": "Launch Film — Electric SUV",
-      "client": "Automotive brand (placeholder)",
+      "title": "Tower Handover Film",
+      "client": "Property developer",
       "year": "2024",
       "category": "video",
-      "size": "sp8",
-      "image": "",
+      "image": "assets/uploads/placeholder-work-04.jpg",
       "video": "",
-      "hue": 15,
-      "description": "Ninety seconds from studio to dune. Full production: direction, cinematography, edit and grade."
+      "description": "Ninety seconds from foundation to handover. Direction, cinematography, edit and grade in house."
     },
     {
       "id": "p05",
-      "title": "Kinetic Idents",
-      "client": "Broadcast client (placeholder)",
+      "title": "Kinetic Ident System",
+      "client": "Broadcast network",
       "year": "2023",
       "category": "motion",
-      "size": "sp6",
-      "image": "",
+      "image": "assets/uploads/placeholder-work-05.jpg",
       "video": "",
-      "hue": 160,
-      "description": "A modular ident system — type, texture and rhythm built to flex across a full channel rebrand."
+      "description": "A modular ident set built to flex across a full channel rebrand. Type, texture and rhythm."
     },
     {
       "id": "p06",
-      "title": "Global Summit — Opening Sequence",
-      "client": "Government entity (placeholder)",
+      "title": "Coastline at First Light",
+      "client": "Tourism board",
       "year": "2025",
-      "category": "events",
-      "size": "sp6",
-      "image": "",
+      "category": "photo",
+      "image": "assets/uploads/placeholder-work-06.jpg",
       "video": "",
-      "hue": 45,
-      "description": "Opening film and live screen content for an international summit stage — cut to the second."
+      "description": "An aerial photo essay along the Gulf coast, shot at dawn across ten days."
     },
     {
       "id": "p07",
-      "title": "Makers — Portrait Series",
-      "client": "Cultural foundation (placeholder)",
+      "title": "Plant Commissioning Film",
+      "client": "Industrial group",
       "year": "2024",
-      "category": "photo",
-      "size": "sp5",
-      "image": "",
+      "category": "video",
+      "image": "assets/uploads/placeholder-work-07.jpg",
       "video": "",
-      "hue": 330,
-      "description": "Portraits of craftspeople at work — one light, one lens, no retouching of hands."
+      "description": "A documentary record of a plant coming online, shot across three shifts with a two person crew."
     },
     {
       "id": "p08",
-      "title": "Hospitality Brand Film",
-      "client": "Hotel group (placeholder)",
-      "year": "2023",
-      "category": "video",
-      "size": "sp7",
-      "image": "",
+      "title": "Broadcast Title Package",
+      "client": "Financial group",
+      "year": "2024",
+      "category": "motion",
+      "image": "assets/uploads/placeholder-work-08.jpg",
       "video": "",
-      "hue": 190,
-      "description": "A slow, tactile film about arrival — shot across three properties in four days."
+      "description": "Live market data turned into broadcast graphics. Built as a system, not a one off."
     },
     {
       "id": "p09",
-      "title": "Neural Cityscapes",
-      "client": "Tech brand (placeholder)",
-      "year": "2025",
-      "category": "ai",
-      "size": "sp8",
-      "image": "",
+      "title": "Ceremony, Interior Coverage",
+      "client": "Government entity",
+      "year": "2023",
+      "category": "events",
+      "image": "assets/uploads/placeholder-work-09.jpg",
       "video": "",
-      "hue": 260,
-      "description": "City futures imagined with generative video, graded to sit seamlessly next to real plates."
+      "description": "Full ceremony coverage with a two hour turnaround highlight cut for national channels."
     },
     {
       "id": "p10",
-      "title": "Data in Motion",
-      "client": "Financial group (placeholder)",
-      "year": "2024",
-      "category": "motion",
-      "size": "sp4",
-      "image": "",
+      "title": "Aerial Coast Study",
+      "client": "Environment agency",
+      "year": "2025",
+      "category": "photo",
+      "image": "assets/uploads/placeholder-work-10.jpg",
       "video": "",
-      "hue": 130,
-      "description": "Live market data turned into broadcast graphics — a system, not a one-off."
+      "description": "Survey photography flown along a protected shoreline, delivered as a public archive set."
     },
     {
       "id": "p11",
-      "title": "Flag Day Ceremony",
-      "client": "Government entity (placeholder)",
-      "year": "2023",
-      "category": "events",
-      "size": "sp6",
-      "image": "",
+      "title": "Generated Terrain Study",
+      "client": "Studio research",
+      "year": "2025",
+      "category": "ai",
+      "image": "assets/uploads/placeholder-work-11.jpg",
       "video": "",
-      "hue": 5,
-      "description": "Full ceremony coverage with a two-hour turnaround highlight for national channels."
+      "description": "Landscapes built with generative video, then matched to real plates in the grade."
     },
     {
       "id": "p12",
-      "title": "Coastline — Aerial Study",
-      "client": "Tourism board (placeholder)",
-      "year": "2025",
-      "category": "photo",
-      "size": "sp6",
-      "image": "",
+      "title": "Executive Interview Series",
+      "client": "Free zone authority",
+      "year": "2024",
+      "category": "video",
+      "image": "assets/uploads/placeholder-work-12.jpg",
       "video": "",
-      "hue": 195,
-      "description": "An aerial photo essay along the Gulf coast — shot at dawn over ten days."
+      "description": "Twelve interviews in two days, one lighting setup, cut into a season of short form films."
     }
   ]
 }

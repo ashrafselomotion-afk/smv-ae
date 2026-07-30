@@ -1,86 +1,95 @@
-# SMV.AE — Media Production
+# SMV.AE
 
-Single-page site for SMV, a UAE media production house. Static, build-free:
-Three.js (continuous particle world), GSAP + ScrollTrigger + Flip (scrubbed scenes, filters), Lenis (smooth scroll).
-All content is data-driven from `data/*.json` and editable through Pages CMS.
+One page site for SMV, a media production house in the UAE. Bright, gallery led,
+built to be edited without touching code.
 
-The experience is **scrub-driven** (weedensenteret-style): scroll plays the story
-forward and backward. The hero assembles chaos into a golden aperture ring; the five
-disciplines are one pinned sequence with an index ticker and scrub-meter; a chapter
-rail on the right tracks and jumps between sections. Press-and-hold anywhere pulls
-the particles into a vortex around the cursor — release flings them out (hki-style).
+Live site: https://smv.ae (also served at the GitHub Pages URL for this repo)
 
-When editing JS/CSS, bump the `?v=N` query in index.html (and the background.js
-import in main.js) so browsers pick up the new files.
+## Editing the site
 
-## Run locally
+Everything you see on the page comes from two files, and you edit both through a
+visual admin, not in code.
+
+1. Open https://app.pagescms.org and sign in with GitHub.
+2. Authorise it for this repository once.
+3. You get two screens: **Site text and media** and **Work**.
+
+Saving in the admin commits to `main`, and the live site updates a minute later.
+
+What you can change:
+
+| Screen | Covers |
+| --- | --- |
+| Site text and media | Logo, menu labels, the opening headline and image or video, the big statement, the full width photograph, the five disciplines, the numbers band, the client list, all contact details |
+| Work | Every project: title, client, year, category, cover image, case video, description, and which one is the featured case |
+
+Videos accept a Vimeo, YouTube, Google Drive or direct mp4 link. Paste the normal
+share link and the site works out the rest.
+
+## Placeholder media
+
+Every file in `assets/uploads` starting with `placeholder-` is temporary stock
+photography, used so the layout could be designed and reviewed. **All of it is
+meant to be replaced with real SMV work** through the admin. The client names in
+`data/site.json` are real; the project titles and client labels in
+`data/projects.json` are stand ins.
+
+Client logos: each client has an optional logo field. Upload a logo and it
+replaces the name in the scrolling roster. Until then the name is shown as type.
+
+## How it is built
+
+No build step and no dependencies to install. Plain HTML, CSS and JavaScript
+modules, so it can be opened straight from disk or served by any static host.
+
+```
+index.html          markup and section order
+css/main.css        design tokens, layout, motion fallbacks
+css/fonts.css       self hosted Archivo and Geist Mono
+js/main.js          renders every section from the JSON, wires the motion
+js/gl.js            the WebGL frame behind the opening image
+data/site.json      all site copy and media
+data/projects.json  the work
+.pages.yml          defines the admin screens
+```
+
+Libraries come from a CDN at runtime: GSAP with ScrollTrigger for the scroll
+choreography, Lenis for continuous scrolling, three.js for the opening frame.
+
+### Design decisions worth knowing
+
+- **Light theme only.** The palette is paper `#F1F1EF`, ink `#16171A`, and a
+  single vermilion accent. The accent carries fills, marks and large type;
+  `--accent-deep` is the only red used on small text, because it is the only one
+  that passes contrast. Buttons are ink with paper text.
+- **One grade on every image.** `--grade` in the CSS holds all media at low
+  saturation so a mixed set reads as one gallery, and colour returns on hover.
+  The opening frame's shader matches the same numbers. If you ever want fuller
+  colour everywhere, raise the saturation in `--grade` and the `mix()` value in
+  `js/gl.js`.
+- **Square corners everywhere.** No rounded corners anywhere, on purpose.
+- **The work pans sideways.** The work section pins and scrolls horizontally on
+  screens wider than 760px. Below that, and for anyone who prefers reduced
+  motion, it unrolls into a normal vertical list.
+- **WebGL is limited to the opening frame.** A canvas plane has to be pixel
+  synced to a DOM box, and anything that moves with scroll drifts a frame behind
+  its caption. The opening frame never moves in layout, so the effect stays
+  exact. If WebGL is unavailable the plain image is shown, graded in CSS.
+- **Reduced motion is honoured.** Smooth scroll, the pan, the parallax, the
+  marquee and the WebGL frame all switch off for anyone who asks for less motion.
+
+## Running it locally
 
 ```bash
-cd smv-ae
-python3 -m http.server 4173
-# → http://localhost:4173
+python3 -m http.server 4188 --directory .
 ```
 
-(Any static server works. Opening `index.html` directly via `file://` won't load the JSON content.)
+Then open http://localhost:4188. If you change CSS or JS, bump the `?v=` number
+on the `main.css` and `main.js` tags in `index.html` so browsers pick it up.
 
-## Structure
+## Still to do
 
-```
-index.html          all sections (hero → contact) + case modal
-css/main.css        design system, layout, motion styles
-js/main.js          rendering from JSON, GSAP/Lenis choreography, filters, modal, cursor
-js/background.js    Three.js continuous background world — one particle system
-                    morphing through 9 formations tied to scroll (ring → dust →
-                    wave → sensor → neural → helix → rings → starfield → burst),
-                    with cursor repulsion and click shockwaves
-data/site.json      hero copy, statement, disciplines, numbers, clients, process, contact
-data/projects.json  the work grid + featured case
-.pages.yml          Pages CMS admin configuration
-404.html            custom 404 (GitHub Pages picks it up automatically)
-CNAME               smv.ae custom domain for GitHub Pages
-```
-
-## Placeholders to replace (all editable in admin — no code needed)
-
-| What | Where in admin | Notes |
-|---|---|---|
-| Showreel (15–20s, muted mp4) | Site Settings → Hero → reel | Plays behind the headline; WebGL particles stay on top |
-| 5 discipline clips (~3s mp4 each) | Site Settings → What We Do → clip | Gradient placeholder shows until set |
-| 12 project thumbnails | Projects → image | Gradient placeholder + index number until set |
-| Project titles / clients / years | Projects | Current entries are realistic placeholders |
-| Case videos | Projects → video | Paste a Vimeo, YouTube, Google Drive or mp4 link — same as the portfolio CMS |
-| Numbers (400+ / 120+ / 60+) | Site Settings → Numbers | Only "10 Years" is real — fill the rest |
-| Client names | Site Settings → Clients | Pre-filled with the real client roster from the portfolio — edit freely |
-| Email / phone / WhatsApp / Instagram | Site Settings → Contact | Currently `hello@smv.ae` and dummy numbers |
-
-## Admin (Pages CMS)
-
-The admin is defined by `.pages.yml` — same system as the portfolio site.
-
-1. Push this folder to a GitHub repo.
-2. Go to **https://app.pagescms.org** → sign in with GitHub → select the repo.
-3. You get a visual editor for **Site Settings** and **Projects**, with image upload
-   (files land in `assets/uploads/`). Every save is a commit → GitHub Pages redeploys.
-
-## Deploy to GitHub Pages (free) + smv.ae domain
-
-```bash
-cd smv-ae
-git init && git add -A && git commit -m "SMV.AE site"
-gh repo create smv-ae --public --source=. --push
-gh api repos/{owner}/smv-ae/pages -X POST -f "source[branch]=main" -f "source[path]=/"
-```
-
-Then point the domain (at your registrar for smv.ae):
-
-- Apex `smv.ae` → **A records**: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-- `www.smv.ae` → **CNAME**: `<github-username>.github.io`
-
-The `CNAME` file in the repo already contains `smv.ae`. In the repo's
-Pages settings, tick **Enforce HTTPS** once the certificate is issued (can take ~30 min after DNS).
-
-## Notes
-
-- **Performance**: particle count halves on mobile; the WebGL loop pauses when the hero is off-screen; discipline clips should be short, muted, compressed mp4s (H.264, ~1080p, <3 MB each).
-- **Accessibility**: honors `prefers-reduced-motion` (no smooth-scroll hijack, no loader, static hero), keyboard-openable cases, focus styles.
-- **Adding a project**: Projects → add item → give it a unique `id` (p13, p14, …), pick a category and grid size. Exactly one project should have **Featured** on.
+- Replace the placeholder photography with real work.
+- Real project titles, client names and case videos.
+- Confirm the phone number, WhatsApp number and Instagram handle in the admin.
+- Point the `smv.ae` DNS at GitHub Pages (the `CNAME` file is already set).

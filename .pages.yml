@@ -1,6 +1,12 @@
-# SMV.AE — Pages CMS configuration (admin side)
-# Connect this repo at https://app.pagescms.org — sign in with GitHub, pick the repo,
-# and this file defines the whole editing UI. Same system as the portfolio site.
+# SMV.AE admin configuration (Pages CMS)
+#
+# How to open the admin:
+#   1. Go to https://app.pagescms.org and sign in with GitHub.
+#   2. Authorise it for the ashrafselomotion-afk/smv-ae repository (one time).
+#   3. This file defines every field you can edit. Save publishes to the live site.
+#
+# Anything you upload goes to assets/uploads. Every file there whose name starts
+# with "placeholder-" is temporary artwork and is meant to be replaced.
 
 media:
   input: assets/uploads
@@ -8,71 +14,121 @@ media:
 
 content:
   - name: site
-    label: Site Settings
+    label: Site text and media
     type: file
     path: data/site.json
     fields:
+      - name: brand
+        label: Brand and navigation
+        type: object
+        fields:
+          - { name: name, label: Name shown in the logo, type: string }
+          - { name: suffix, label: Logo suffix (shown in red), type: string }
+          - name: navLabels
+            label: Menu labels
+            type: object
+            fields:
+              - { name: work, label: Menu item 1, type: string }
+              - { name: studio, label: Menu item 2, type: string }
+              - { name: clients, label: Menu item 3, type: string }
+              - { name: cta, label: Button label (used in the menu and the hero), type: string }
+
       - name: hero
-        label: Hero
+        label: Opening screen
         type: object
         fields:
-          - { name: line1, label: Headline — line 1, type: string }
-          - { name: line2, label: Headline — line 2, type: string }
-          - { name: sub, label: Subline, type: string }
-          - { name: reel, label: Showreel video (mp4 URL or uploaded file path), type: string }
-      - name: statement
-        label: Statement paragraph
-        type: text
-      - name: disciplines
-        label: What We Do
+          - { name: line1, label: Headline line 1 (keep it short, it must fit one line), type: string }
+          - { name: line2, label: Headline line 2 (keep it short, it must fit one line), type: string }
+          - { name: sub, label: Supporting line (20 words maximum), type: text }
+          - { name: ctaPrimary, label: Main button label, type: string }
+          - { name: image, label: Opening image, type: image }
+          - { name: video, label: 'Opening video instead of the image (Vimeo, YouTube, Drive or mp4 link). Leave empty to keep the image.', type: string }
+
+      - { name: statement, label: Big statement sentence, type: text }
+
+      - name: interlude
+        label: Full width photograph
         type: object
-        list: true
         fields:
-          - { name: title, label: Title, type: string }
-          - { name: tagline, label: Tagline, type: string }
-          - { name: clip, label: Background clip (mp4 URL or uploaded file path), type: string }
-          - { name: hue, label: Placeholder hue (0–360, used until a clip is set), type: number }
+          - { name: image, label: Image (shown edge to edge, drifts as you scroll), type: image }
+
+      - name: craft
+        label: What we do
+        type: object
+        fields:
+          - { name: eyebrow, label: Small label above the heading, type: string }
+          - { name: heading, label: 'Heading (use a line break for two lines)', type: text }
+          - name: items
+            label: Disciplines
+            type: object
+            list: true
+            fields:
+              - { name: title, label: Title, type: string }
+              - { name: tagline, label: One line description, type: string }
+              - { name: image, label: Preview image, type: image }
+              - { name: video, label: 'Preview video instead of the image (Vimeo, YouTube, Drive or mp4 link)', type: string }
+
+      - name: gallery
+        label: Work section
+        type: object
+        fields:
+          - { name: heading, label: Heading, type: string }
+          - name: filters
+            label: Filter buttons
+            type: object
+            list: true
+            fields:
+              - { name: key, label: 'Category code (must match the category set on each project: all, video, photo, ai, motion, events)', type: string }
+              - { name: label, label: Button label, type: string }
+
       - name: numbers
-        label: Numbers
+        label: Numbers band
         type: object
         list: true
         fields:
-          - { name: value, label: Value, type: number }
-          - { name: suffix, label: Suffix (e.g. +), type: string }
-          - { name: label, label: Label, type: string }
+          - { name: value, label: Number (digits only, it counts up), type: number }
+          - { name: suffix, label: 'Suffix, for example +', type: string }
+          - { name: label, label: Label underneath, type: string }
+
+      - name: clientsSection
+        label: Clients section
+        type: object
+        fields:
+          - { name: eyebrow, label: Small label above the heading, type: string }
+          - { name: heading, label: 'Heading (use a line break for two lines)', type: text }
+
       - name: clients
-        label: Client names (shown in the logo strip)
-        type: string
-        list: true
-      - name: process
-        label: Process steps
+        label: Client list (scrolls across the screen)
         type: object
         list: true
         fields:
-          - { name: title, label: Title, type: string }
-          - { name: text, label: One line, type: string }
+          - { name: name, label: Client name, type: string }
+          - { name: logo, label: 'Logo image (optional). Upload one and it replaces the name.', type: image }
+
       - name: contact
-        label: Contact
+        label: Contact section
         type: object
         fields:
-          - { name: headline, label: 'Headline (use \n for a line break)', type: string }
+          - { name: heading, label: 'Heading (use a line break for two lines)', type: text }
+          - { name: body, label: Supporting line, type: text }
+          - { name: cta, label: Button label, type: string }
           - { name: email, label: Email, type: string }
-          - { name: phone, label: Phone (display format), type: string }
-          - { name: whatsapp, label: WhatsApp number (digits only, e.g. 9715XXXXXXXX), type: string }
-          - { name: instagram, label: Instagram handle (no @), type: string }
-          - { name: location, label: Location, type: string }
+          - { name: phone, label: Phone as you want it displayed, type: string }
+          - { name: whatsapp, label: 'WhatsApp number, digits only, for example 9715XXXXXXXX', type: string }
+          - { name: instagram, label: Instagram handle without the @, type: string }
+          - { name: location, label: Studio location, type: string }
 
   - name: projects
-    label: Projects
+    label: Work
     type: file
     path: data/projects.json
     fields:
       - name: projects
-        label: Projects
+        label: Projects (shown in the order listed here)
         type: object
         list: true
         fields:
-          - { name: id, label: 'ID (unique, e.g. p13)', type: string }
+          - { name: id, label: 'Reference code, must be unique, for example p13', type: string }
           - { name: title, label: Title, type: string }
           - { name: client, label: Client, type: string }
           - { name: year, label: Year, type: string }
@@ -86,21 +142,15 @@ content:
                 - { value: ai, label: AI }
                 - { value: motion, label: Motion }
                 - { value: events, label: Events }
-          - name: size
-            label: Grid size (span of 12 columns)
-            type: select
-            options:
-              values: [ sp4, sp5, sp6, sp7, sp8 ]
-          - { name: image, label: Thumbnail image, type: image }
-          - { name: video, label: 'Case video — paste a Vimeo, YouTube, Google Drive or mp4 link', type: string }
-          - { name: hue, label: Placeholder hue (0–360, used until an image is set), type: number }
-          - { name: description, label: Description, type: text }
-          - { name: featured, label: Featured case (only one should be on), type: boolean }
-          - { name: challenge, label: Challenge line (featured case only), type: text }
+          - { name: image, label: Cover image, type: image }
+          - { name: video, label: 'Case video (Vimeo, YouTube, Google Drive or mp4 link). Opens when the project is clicked.', type: string }
+          - { name: description, label: Description shown in the case view, type: text }
+          - { name: featured, label: Show this one as the featured case (turn it on for one project only), type: boolean }
+          - { name: challenge, label: Featured case paragraph, type: text }
           - name: stats
-            label: Stats (featured case only)
+            label: Featured case numbers
             type: object
             list: true
             fields:
-              - { name: value, label: Value (e.g. 48h), type: string }
+              - { name: value, label: 'Value, for example 48h', type: string }
               - { name: label, label: Label, type: string }

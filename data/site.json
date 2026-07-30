@@ -1,61 +1,223 @@
 {
-  "hero": {
-    "line1": "We frame moments",
-    "line2": "that govern attention.",
-    "sub": "Media production · Ten years · UAE",
-    "reel": ""
+  "brand": {
+    "name": "SMV",
+    "suffix": ".AE",
+    "navLabels": {
+      "work": "Work",
+      "studio": "Studio",
+      "clients": "Clients",
+      "cta": "Start a project"
+    }
   },
-  "statement": "A decade behind the lens. From national events to frames that don't exist yet.",
-  "disciplines": [
-    { "title": "Videography", "tagline": "Story in motion.", "clip": "", "hue": 36 },
-    { "title": "Photography", "tagline": "The decisive frame.", "clip": "", "hue": 210 },
-    { "title": "AI Video Production", "tagline": "Beyond what a camera can reach.", "clip": "", "hue": 280 },
-    { "title": "Motion Graphics", "tagline": "Ideas that move.", "clip": "", "hue": 160 },
-    { "title": "Government Event Coverage", "tagline": "Nation-scale moments, fully covered.", "clip": "", "hue": 10 }
-  ],
+  "hero": {
+    "line1": "We shoot what",
+    "line2": "the UAE watches.",
+    "sub": "Videography, photography, motion graphics and government event coverage. Ten years in the UAE.",
+    "ctaPrimary": "See the work",
+    "image": "assets/uploads/placeholder-hero.jpg",
+    "video": ""
+  },
+  "statement": "A decade behind the lens, from national ceremonies to frames no camera could reach.",
+  "interlude": {
+    "image": "assets/uploads/placeholder-work-01.jpg"
+  },
+  "craft": {
+    "eyebrow": "What we do",
+    "heading": "Five disciplines,\none crew.",
+    "items": [
+      {
+        "title": "Videography",
+        "tagline": "Direction, crew and camera, start to finish.",
+        "image": "assets/uploads/placeholder-craft-videography.jpg",
+        "video": ""
+      },
+      {
+        "title": "Photography",
+        "tagline": "Stills for press, archive and campaign.",
+        "image": "assets/uploads/placeholder-craft-photography.jpg",
+        "video": ""
+      },
+      {
+        "title": "AI Video Production",
+        "tagline": "Footage no camera could capture.",
+        "image": "assets/uploads/placeholder-craft-ai.jpg",
+        "video": ""
+      },
+      {
+        "title": "Motion Graphics",
+        "tagline": "Titles, idents and data in motion.",
+        "image": "assets/uploads/placeholder-craft-motion.jpg",
+        "video": ""
+      },
+      {
+        "title": "Government Event Coverage",
+        "tagline": "Multi camera coverage at national scale.",
+        "image": "assets/uploads/placeholder-craft-events.jpg",
+        "video": ""
+      }
+    ]
+  },
+  "gallery": {
+    "heading": "Selected work",
+    "filters": [
+      {
+        "key": "all",
+        "label": "All"
+      },
+      {
+        "key": "video",
+        "label": "Video"
+      },
+      {
+        "key": "photo",
+        "label": "Photo"
+      },
+      {
+        "key": "ai",
+        "label": "AI"
+      },
+      {
+        "key": "motion",
+        "label": "Motion"
+      },
+      {
+        "key": "events",
+        "label": "Events"
+      }
+    ]
+  },
   "numbers": [
-    { "value": 10, "suffix": "", "label": "Years" },
-    { "value": 400, "suffix": "+", "label": "Projects" },
-    { "value": 120, "suffix": "+", "label": "Events covered" },
-    { "value": 60, "suffix": "+", "label": "Clients" }
+    {
+      "value": 10,
+      "suffix": "",
+      "label": "Years working"
+    },
+    {
+      "value": 400,
+      "suffix": "+",
+      "label": "Projects delivered"
+    },
+    {
+      "value": 120,
+      "suffix": "+",
+      "label": "Events covered"
+    },
+    {
+      "value": 60,
+      "suffix": "+",
+      "label": "Clients served"
+    }
   ],
+  "clientsSection": {
+    "eyebrow": "Trusted by",
+    "heading": "Who we\nshoot for."
+  },
   "clients": [
-    "PepsiCo · Mo Salah",
-    "Almarai · Anchor",
-    "BEEAH Group",
-    "Edge Group",
-    "Dubai Airshow",
-    "Genesis F1 2025",
-    "Dubai Duty Free",
-    "EWEC",
-    "SHUROOQ",
-    "Invest in Sharjah",
-    "IGCF",
-    "SIBF",
-    "Sharjah Entrepreneurship Festival",
-    "House of Wisdom",
-    "Arab Youth Center",
-    "SPC Free Zone",
-    "Messe Frankfurt",
-    "MRO Middle East",
-    "AIME Exhibitions",
-    "Xposure Festival",
-    "Les Misérables · Abu Dhabi",
-    "The Big Heart Foundation",
-    "Hope Makers",
-    "IUCN · Abu Dhabi"
-  ],
-  "process": [
-    { "title": "Brief", "text": "One conversation. We take it from there." },
-    { "title": "Produce", "text": "Crew, cameras, code — whatever the frame needs." },
-    { "title": "Deliver", "text": "On time, in every format that matters." }
+    {
+      "name": "PepsiCo",
+      "logo": ""
+    },
+    {
+      "name": "Almarai",
+      "logo": ""
+    },
+    {
+      "name": "BEEAH Group",
+      "logo": ""
+    },
+    {
+      "name": "Edge Group",
+      "logo": ""
+    },
+    {
+      "name": "Dubai Airshow",
+      "logo": ""
+    },
+    {
+      "name": "Genesis F1",
+      "logo": ""
+    },
+    {
+      "name": "Dubai Duty Free",
+      "logo": ""
+    },
+    {
+      "name": "EWEC",
+      "logo": ""
+    },
+    {
+      "name": "SHUROOQ",
+      "logo": ""
+    },
+    {
+      "name": "Invest in Sharjah",
+      "logo": ""
+    },
+    {
+      "name": "IGCF",
+      "logo": ""
+    },
+    {
+      "name": "SIBF",
+      "logo": ""
+    },
+    {
+      "name": "Sharjah Entrepreneurship Festival",
+      "logo": ""
+    },
+    {
+      "name": "House of Wisdom",
+      "logo": ""
+    },
+    {
+      "name": "Arab Youth Center",
+      "logo": ""
+    },
+    {
+      "name": "SPC Free Zone",
+      "logo": ""
+    },
+    {
+      "name": "Messe Frankfurt",
+      "logo": ""
+    },
+    {
+      "name": "MRO Middle East",
+      "logo": ""
+    },
+    {
+      "name": "AIME Exhibitions",
+      "logo": ""
+    },
+    {
+      "name": "Xposure Festival",
+      "logo": ""
+    },
+    {
+      "name": "Les Misérables Abu Dhabi",
+      "logo": ""
+    },
+    {
+      "name": "The Big Heart Foundation",
+      "logo": ""
+    },
+    {
+      "name": "Hope Makers",
+      "logo": ""
+    },
+    {
+      "name": "IUCN",
+      "logo": ""
+    }
   ],
   "contact": {
-    "headline": "Let's make something\nworth watching.",
+    "heading": "Tell us what\nyou are shooting.",
+    "body": "Send the brief, the date and the deliverables. We reply the same working day.",
+    "cta": "Start a project",
     "email": "hello@smv.ae",
     "phone": "+971 50 000 0000",
     "whatsapp": "971500000000",
     "instagram": "smv.ae",
-    "location": "Dubai · United Arab Emirates"
+    "location": "Dubai, United Arab Emirates"
   }
 }
