@@ -46,11 +46,19 @@ content:
 
       - { name: statement, label: Big statement sentence, type: text }
 
-      - name: interlude
-        label: Full width photograph
+      - name: events
+        label: Government event coverage
         type: object
         fields:
-          - { name: image, label: Image (shown edge to edge, drifts as you scroll), type: image }
+          - { name: heading, label: 'Big centred headline (use a line break for two lines)', type: text }
+          - { name: body, label: Supporting line, type: text }
+          - name: images
+            label: Event photographs (these appear one by one as the visitor moves the mouse across the section)
+            type: object
+            list: true
+            fields:
+              - { name: image, label: Photograph, type: image }
+              - { name: caption, label: Which event this is (used as the description for screen readers), type: string }
 
       - name: craft
         label: What we do

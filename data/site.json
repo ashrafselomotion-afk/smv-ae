@@ -18,8 +18,43 @@
     "video": ""
   },
   "statement": "A decade behind the lens, from national ceremonies to frames no camera could reach.",
-  "interlude": {
-    "image": "assets/uploads/placeholder-work-01.jpg"
+  "events": {
+    "heading": "Government\nevent coverage.",
+    "body": "Ceremonies, summits and national days. Multi camera crews, live feeds and same day delivery.",
+    "images": [
+      {
+        "image": "assets/uploads/placeholder-work-01.jpg",
+        "caption": "Festival coverage"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-09.jpg",
+        "caption": "Ceremony interior"
+      },
+      {
+        "image": "assets/uploads/placeholder-craft-events.jpg",
+        "caption": "Signing desk"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-12.jpg",
+        "caption": "Delegate interview"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-04.jpg",
+        "caption": "Summit venue"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-02.jpg",
+        "caption": "City backdrop"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-07.jpg",
+        "caption": "Site visit"
+      },
+      {
+        "image": "assets/uploads/placeholder-work-06.jpg",
+        "caption": "National day"
+      }
+    ]
   },
   "craft": {
     "eyebrow": "What we do",

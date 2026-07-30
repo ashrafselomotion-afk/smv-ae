@@ -7,8 +7,9 @@
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
      statement        words darken as they are read, ties pace to scroll
-     full bleed       slow parallax, a breath between two dense sections
+     event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
+     magnetic buttons small lean toward the cursor, feedback on the primary action
      craft list       hover swaps the preview frame, browsing without leaving the page
      work reel        pinned horizontal pan, the work is the content so it gets the motion
      marquee          breadth of the client list, no individual attention needed
@@ -104,10 +105,9 @@ function renderChrome(site) {
     if (img) img.src = site.hero.image;
   }
 
-  const bleed = $('[data-bleed] img');
-  if (bleed && site.interlude?.image) bleed.src = site.interlude.image;
-
   setText($('[data-statement]'), site.statement);
+  setText($('[data-events-heading]'), site.events?.heading);
+  setText($('[data-events-body]'), site.events?.body);
   setText($('[data-craft-eyebrow]'), site.craft?.eyebrow);
   setText($('[data-craft-heading]'), site.craft?.heading);
   setText($('[data-gal-heading]'), site.gallery?.heading);
@@ -186,6 +186,89 @@ function renderCraft(craft) {
     row.addEventListener('click', () => activate(i));
   });
   activate(0);
+}
+
+/** Builds the pool of frames the cursor spawns, plus the touch fallback grid. */
+function renderEvents(events) {
+  const stage = $('[data-events-stage]');
+  const grid = $('[data-events-grid]');
+  const items = (events?.images || []).filter((x) => x.image);
+  if (!items.length) return;
+
+  if (stage) {
+    stage.innerHTML = items.map((it) => `
+      <figure><img src="${esc(it.image)}" alt="" loading="lazy"></figure>
+    `).join('');
+  }
+  if (grid) {
+    grid.innerHTML = items.map((it) => `
+      <li><img src="${esc(it.image)}" alt="${esc(it.caption || '')}" loading="lazy"></li>
+    `).join('');
+  }
+}
+
+/**
+ * Cursor trail: every time the pointer has travelled far enough, the next frame
+ * in the pool is placed under it, pops in and drifts away. This is the section
+ * about covering events, so moving through it deals out past events.
+ */
+function initEventTrail() {
+  const section = $('.events');
+  const stage = $('[data-events-stage]');
+  if (!section || !stage || REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const frames = $$('figure', stage);
+  if (!frames.length) return;
+
+  let last = null, travelled = 0, i = 0, z = 1;
+  const STEP = 150;                       // px of pointer travel between frames
+
+  section.addEventListener('pointermove', (e) => {
+    const r = stage.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+
+    if (last) travelled += Math.hypot(x - last.x, y - last.y);
+    last = { x, y };
+    if (travelled < STEP) return;
+    travelled = 0;
+
+    const el = frames[i % frames.length];
+    i += 1;
+
+    gsap.killTweensOf(el);
+    gsap.set(el, {
+      x, y, xPercent: -50, yPercent: -50, zIndex: (z += 1),
+      opacity: 1, scale: 0.82,
+      rotate: gsap.utils.random(-8, 8),
+      clipPath: 'inset(0% 0% 100% 0%)'
+    });
+    gsap.timeline()
+      .to(el, { clipPath: 'inset(0% 0% 0% 0%)', scale: 1, duration: 0.55, ease: 'expo.out' })
+      .to(el, { opacity: 0, scale: 1.06, duration: 0.7, ease: 'power2.out' }, '+=0.35');
+  }, { passive: true });
+
+  section.addEventListener('pointerleave', () => {
+    last = null; travelled = 0;
+    gsap.to(frames, { opacity: 0, duration: 0.5, ease: 'power2.out', overwrite: true });
+  });
+}
+
+/** Primary buttons lean toward the cursor. Feedback, kept small. */
+function initMagnetic() {
+  if (REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  $$('.btn').forEach((btn) => {
+    const xTo = gsap.quickTo(btn, 'x', { duration: 0.5, ease: 'power3.out' });
+    const yTo = gsap.quickTo(btn, 'y', { duration: 0.5, ease: 'power3.out' });
+    btn.addEventListener('pointermove', (e) => {
+      const r = btn.getBoundingClientRect();
+      xTo((e.clientX - (r.left + r.width / 2)) * 0.28);
+      yTo((e.clientY - (r.top + r.height / 2)) * 0.4);
+    });
+    btn.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
+  });
 }
 
 function renderFilters(filters = []) {
@@ -362,15 +445,6 @@ function initStatement() {
   });
 }
 
-function initBleed() {
-  if (REDUCED) return;
-  const img = $('[data-bleed] img');
-  if (!img) return;
-  gsap.fromTo(img, { yPercent: -14 }, {
-    yPercent: 0, ease: 'none',
-    scrollTrigger: { trigger: '[data-bleed]', start: 'top bottom', end: 'bottom top', scrub: true }
-  });
-}
 
 /** Pinned horizontal pan. Wrapper pins, inner track slides. */
 function initReel() {
@@ -511,6 +585,7 @@ async function boot() {
 
   renderChrome(site);
   renderNumbers(site.numbers);
+  renderEvents(site.events);
   renderCraft(site.craft);
   renderFilters(site.gallery?.filters);
   renderReel(state.projects);
@@ -523,7 +598,8 @@ async function boot() {
   if (window.gsap) {
     initHero();
     initStatement();
-    initBleed();
+    initEventTrail();
+    initMagnetic();
     initCounters();
     initReel();
     initMarquee();

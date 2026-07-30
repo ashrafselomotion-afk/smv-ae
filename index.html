@@ -19,7 +19,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/uploads/placeholder-hero.jpg" as="image" fetchpriority="high">
-<link rel="stylesheet" href="css/main.css?v=12">
+<link rel="stylesheet" href="css/main.css?v=14">
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -74,9 +74,16 @@
     <p data-statement>A decade behind the lens, from national ceremonies to frames no camera could reach.</p>
   </section>
 
-  <!-- 3 / full bleed frame : a cinematic breath, parallax only -->
-  <section class="bleed" aria-hidden="true" data-bleed>
-    <img src="assets/uploads/placeholder-work-01.jpg" alt="" loading="lazy">
+  <!-- 3 / government events : cursor spawns frames from past events -->
+  <section class="events" id="events" aria-labelledby="events-h">
+    <div class="events-stage" data-events-stage aria-hidden="true"></div>
+    <div class="events-inner">
+      <h2 id="events-h" data-events-heading>Government
+event coverage.</h2>
+      <p data-events-body>Ceremonies, summits and national days. Multi camera crews, live feeds and same day delivery.</p>
+    </div>
+    <!-- shown on touch screens and under reduced motion, where a cursor trail cannot work -->
+    <ul class="events-grid" data-events-grid></ul>
   </section>
 
   <!-- 4 / numbers : data band -->
@@ -192,6 +199,6 @@ you are shooting.</h2>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-<script type="module" src="js/main.js?v=12"></script>
+<script type="module" src="js/main.js?v=14"></script>
 </body>
 </html>
