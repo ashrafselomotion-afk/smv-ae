@@ -19,7 +19,7 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/uploads/placeholder-header-loop.webp" as="image" fetchpriority="high">
-<link rel="stylesheet" href="css/main.css?v=18">
+<link rel="stylesheet" href="css/main.css?v=20">
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -70,7 +70,7 @@
   </section>
 
   <!-- 2 / statement : editorial manifesto -->
-  <section class="statement wrap" aria-label="Studio statement">
+  <section class="statement" aria-label="Studio statement">
     <p data-statement>A decade behind the lens, from national ceremonies to frames no camera could reach.</p>
   </section>
 
@@ -141,12 +141,16 @@ one crew.</h2>
   <!-- 8 / clients : marquee roster -->
   <section class="clients" id="clients" aria-labelledby="clients-h">
     <div class="wrap clients-head">
-      <span class="eyebrow" data-clients-eyebrow>Trusted by</span>
       <h2 id="clients-h" data-clients-heading>Who we
 shoot for.</h2>
+      <p class="clients-note">
+        <b data-count="0" data-suffix="">0</b>
+        <span data-clients-note>clients on the roster</span>
+      </p>
     </div>
-    <div class="marquee">
-      <ul class="mq-track" data-mq aria-label="Client roster"></ul>
+    <div class="marquee" aria-label="Client roster">
+      <ul class="mq-track" data-mq></ul>
+      <ul class="mq-track mq-out" data-mq-out aria-hidden="true"></ul>
     </div>
   </section>
 
@@ -198,7 +202,8 @@ you are shooting.</h2>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-<script type="module" src="js/main.js?v=18"></script>
+<script type="module" src="js/main.js?v=20"></script>
 </body>
 </html>

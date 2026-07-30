@@ -36,6 +36,7 @@
     ]
   },
   "statement": "A decade behind the lens, from national ceremonies to frames no camera could reach.",
+  "statementAccent": "frames no camera could reach",
   "events": {
     "heading": "Government\nevent coverage.",
     "body": "Ceremonies, summits and national days. Multi camera crews, live feeds and same day delivery.",
@@ -162,8 +163,8 @@
     }
   ],
   "clientsSection": {
-    "eyebrow": "Trusted by",
-    "heading": "Who we\nshoot for."
+    "heading": "Who we\nshoot for.",
+    "note": "clients on the roster"
   },
   "clients": [
     {

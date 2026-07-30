@@ -6,13 +6,13 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     statement        words darken as they are read, ties pace to scroll
+     statement        lines rise out of focus and resolve, the header's blur in reverse
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
      magnetic buttons small lean toward the cursor, feedback on the primary action
      craft list       hover swaps the preview frame, browsing without leaving the page
      work reel        pinned horizontal pan, the work is the content so it gets the motion
-     marquee          breadth of the client list, no individual attention needed
+     marquee          two rows against each other, solid over outline, breadth at a glance
    All of it collapses under prefers-reduced-motion.
    ========================================================================== */
 
@@ -157,8 +157,8 @@ function renderChrome(site) {
   setText($('[data-craft-eyebrow]'), site.craft?.eyebrow);
   setText($('[data-craft-heading]'), site.craft?.heading);
   setText($('[data-gal-heading]'), site.gallery?.heading);
-  setText($('[data-clients-eyebrow]'), site.clientsSection?.eyebrow);
   setText($('[data-clients-heading]'), site.clientsSection?.heading);
+  setText($('[data-clients-note]'), site.clientsSection?.note);
 
   const c = site.contact || {};
   setText($('[data-contact="heading"]'), c.heading);
@@ -372,12 +372,23 @@ function renderFeatured(projects) {
 
 function renderClients(clients = []) {
   const track = $('[data-mq]');
+  const out = $('[data-mq-out]');
   if (!track) return;
   const item = (c) => `<li>${c.logo
     ? `<img src="${esc(c.logo)}" alt="${esc(c.name || '')}">`
     : esc(c.name || '')}</li>`;
-  // duplicated once so the loop wraps seamlessly
-  track.innerHTML = clients.map(item).join('') + clients.map(item).join('');
+  // duplicated once so each row can wrap seamlessly
+  const row = clients.map(item).join('');
+  track.innerHTML = row + row;
+  // the outline row runs the other way, offset so the two never line up
+  if (out) {
+    const shifted = clients.slice(Math.floor(clients.length / 2))
+      .concat(clients.slice(0, Math.floor(clients.length / 2)));
+    const rowB = shifted.map(item).join('');
+    out.innerHTML = rowB + rowB;
+  }
+  const count = $('.clients-note b');
+  if (count) count.dataset.count = String(clients.length);
 }
 
 /* ---------------------------------------------------------------- filter -- */
@@ -457,24 +468,47 @@ function initReveals() {
   els.forEach((e) => io.observe(e));
 }
 
-/** Every number on the page counts up when it arrives, band and case stats alike. */
+/**
+ * Every number counts up the first time it is actually on screen.
+ * Deliberately on IntersectionObserver rather than ScrollTrigger: two pinned
+ * sections sit above these, and a refresh can fire a start-position trigger
+ * before the visitor has ever seen the number, so it would already be at its
+ * final value by the time they scrolled down.
+ */
 function initCounters() {
-  $$('[data-count]').forEach((el) => {
+  const els = $$('[data-count]');
+  if (!els.length) return;
+
+  const run = (el) => {
     const to = Number(el.dataset.count) || 0;
     const prefix = el.dataset.prefix || '';
     const suffix = el.dataset.suffix || '';
-    const write = (n) => { el.textContent = `${prefix}${n}${suffix}`; };
-    if (REDUCED) { write(to); return; }
-    write(0);
     const obj = { v: 0 };
-    ScrollTrigger.create({
-      trigger: el, start: 'top 90%', once: true,
-      onEnter: () => gsap.to(obj, {
-        v: to, duration: 1.6, ease: 'power2.out',
-        onUpdate: () => write(Math.round(obj.v))
-      })
+    gsap.to(obj, {
+      v: to, duration: 1.9, ease: 'power2.out',
+      onUpdate: () => { el.textContent = `${prefix}${Math.round(obj.v)}${suffix}`; },
+      onComplete: () => { el.textContent = `${prefix}${to}${suffix}`; }
     });
+  };
+
+  els.forEach((el) => {
+    const to = Number(el.dataset.count) || 0;
+    const prefix = el.dataset.prefix || '';
+    const suffix = el.dataset.suffix || '';
+    if (REDUCED) { el.textContent = `${prefix}${to}${suffix}`; return; }
+    el.textContent = `${prefix}0${suffix}`;
   });
+  if (REDUCED) return;
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      run(en.target);
+    });
+  }, { threshold: 0.6 });
+
+  els.forEach((el) => io.observe(el));
 }
 
 /** Splits "48h" into 48 + "h" so mixed values can still animate. */
@@ -579,19 +613,66 @@ function initViewerCursor() {
   $('#case')?.addEventListener('pointerenter', hide);
 }
 
+/**
+ * The header blurs out as the camera pushes through it, so this line arrives
+ * the same way in reverse: each line rises out of depth, out of focus, and
+ * resolves. One continuous focus pull rather than a separate effect.
+ */
 function initStatement() {
   const p = $('[data-statement]');
   if (!p) return;
-  const words = p.textContent.trim().split(/\s+/);
-  p.innerHTML = words.map((w) => `<span class="w">${esc(w)}</span>`).join(' ');
+
+  const accent = state.site?.statementAccent;
+  const full = p.textContent.trim();
+  if (accent && full.includes(accent)) {
+    // take any closing punctuation with the phrase, so the full stop is not
+    // left sitting in ink at the end of a coloured line
+    const re = new RegExp(esc(accent).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.!?,]?');
+    p.innerHTML = esc(full).replace(re, (m) => `<span class="hi">${m}</span>`);
+  } else {
+    p.innerHTML = esc(full);
+  }
+
   if (REDUCED) return;
-  const spans = $$('.w', p);
-  ScrollTrigger.create({
-    trigger: p, start: 'top 82%', end: 'bottom 58%', scrub: true,
-    onUpdate: (self) => {
-      const n = Math.round(self.progress * spans.length);
-      spans.forEach((s, i) => s.classList.toggle('on', i < n));
+
+  let split = null;
+  let tween = null;
+
+  const build = () => {
+    tween?.scrollTrigger?.kill();
+    tween?.kill();
+    split?.revert();
+
+    const hasPlugin = typeof window.SplitText === 'function';
+    if (hasPlugin) {
+      split = new SplitText(p, { type: 'lines', linesClass: 'st-line', mask: 'lines' });
     }
+    const targets = hasPlugin && split.lines.length ? split.lines : [p];
+
+    gsap.set(targets, {
+      yPercent: 108, rotateX: -46, opacity: 0,
+      filter: 'blur(18px)', transformOrigin: '50% 100% -60px'
+    });
+    tween = gsap.to(targets, {
+      yPercent: 0, rotateX: 0, opacity: 1, filter: 'blur(0px)',
+      ease: 'power3.out', stagger: 0.16, duration: 1,
+      scrollTrigger: {
+        trigger: p,
+        start: 'top 92%',
+        end: 'center 58%',
+        scrub: 1,
+        invalidateOnRefresh: true
+      }
+    });
+  };
+
+  build();
+
+  // line breaks change with the viewport, so the masks have to be rebuilt
+  let t;
+  window.addEventListener('resize', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { build(); ScrollTrigger.refresh(); }, 250);
   });
 }
 
@@ -640,11 +721,18 @@ function initReel() {
 }
 
 function initMarquee() {
-  const track = $('[data-mq]');
-  if (!track || REDUCED || !track.children.length) return;
-  const loop = gsap.to(track, { xPercent: -50, ease: 'none', duration: 48, repeat: -1 });
-  track.addEventListener('pointerenter', () => gsap.to(loop, { timeScale: 0.2, duration: 0.5 }));
-  track.addEventListener('pointerleave', () => gsap.to(loop, { timeScale: 1, duration: 0.5 }));
+  if (REDUCED) return;
+  const rows = [
+    { el: $('[data-mq]'), from: 0, to: -50, dur: 52 },
+    { el: $('[data-mq-out]'), from: -50, to: 0, dur: 64 }
+  ];
+  rows.forEach(({ el, from, to, dur }) => {
+    if (!el || !el.children.length) return;
+    const loop = gsap.fromTo(el, { xPercent: from },
+      { xPercent: to, ease: 'none', duration: dur, repeat: -1 });
+    el.addEventListener('pointerenter', () => gsap.to(loop, { timeScale: 0.15, duration: 0.5 }));
+    el.addEventListener('pointerleave', () => gsap.to(loop, { timeScale: 1, duration: 0.5 }));
+  });
 }
 
 function initSmoothScroll() {

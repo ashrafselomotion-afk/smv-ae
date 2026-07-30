@@ -103,8 +103,8 @@ content:
         label: Clients section
         type: object
         fields:
-          - { name: eyebrow, label: Small label above the heading, type: string }
           - { name: heading, label: 'Heading (use a line break for two lines)', type: text }
+          - { name: note, label: 'Line beside the client count, for example "clients on the roster"', type: string }
 
       - name: clients
         label: Client list (scrolls across the screen)
