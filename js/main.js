@@ -301,6 +301,46 @@ function initEventTrail() {
   });
 }
 
+/** The menu tracks the section under the viewport, so you always know where you are. */
+function initScrollSpy() {
+  const map = [
+    ['#work', '[data-nav="work"]'],
+    ['#craft', '[data-nav="studio"]'],
+    ['#clients', '[data-nav="clients"]']
+  ];
+  map.forEach(([sec, link]) => {
+    const s = $(sec);
+    const a = $(`.nav-links ${link}`);
+    if (!s || !a) return;
+    ScrollTrigger.create({
+      trigger: s,
+      start: 'top 55%',
+      end: 'bottom 45%',
+      onToggle: (self) => a.classList.toggle('on', self.isActive)
+    });
+  });
+}
+
+/** Work frames lean toward the cursor in 3D, so the reel answers the hand. */
+function initReelTilt() {
+  if (REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  $$('.reel-btn').forEach((btn) => {
+    const shot = $('.reel-shot', btn);
+    if (!shot) return;
+    const rx = gsap.quickTo(shot, 'rotationX', { duration: 0.6, ease: 'power3.out' });
+    const ry = gsap.quickTo(shot, 'rotationY', { duration: 0.6, ease: 'power3.out' });
+    btn.addEventListener('pointermove', (e) => {
+      const r = btn.getBoundingClientRect();
+      const nx = (e.clientX - r.left) / r.width - 0.5;
+      const ny = (e.clientY - r.top) / r.height - 0.5;
+      ry(nx * 7);
+      rx(ny * -7);
+    });
+    btn.addEventListener('pointerleave', () => { rx(0); ry(0); });
+  });
+}
+
 /** Primary buttons lean toward the cursor. Feedback, kept small. */
 function initMagnetic() {
   if (REDUCED) return;
@@ -531,13 +571,20 @@ function prepareStatement() {
   if (!p) return null;
   const accent = state.site?.statementAccent;
   const full = p.textContent.trim();
-  if (accent && full.includes(accent)) {
-    // take any closing punctuation with the phrase, so the full stop is not
-    // left sitting in ink at the end of a coloured line
-    const re = new RegExp(esc(accent).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[.!?,]?');
-    p.innerHTML = esc(full).replace(re, (m) => `<span class="hi">${m}</span>`);
+  const at = accent ? full.indexOf(accent) : -1;
+  if (at >= 0) {
+    // the phrase takes its closing punctuation with it, and the two halves are
+    // separate blocks so the lens stage can lay them out around the camera
+    let end = at + accent.length;
+    if ('.!?,'.includes(full[end])) end += 1;
+    const before = full.slice(0, at).trim();
+    const after = full.slice(end).trim();
+    p.innerHTML =
+      `<span class="st-part st-main">${esc(before)}</span> ` +
+      `<span class="st-part hi">${esc(full.slice(at, end))}</span>` +
+      (after ? ` <span class="st-part">${esc(after)}</span>` : '');
   } else {
-    p.innerHTML = esc(full);
+    p.innerHTML = `<span class="st-part st-main">${esc(full)}</span>`;
   }
   return p;
 }
@@ -584,8 +631,6 @@ async function initLensStage() {
   state.rig = rig;
   window.__rig = rig;
 
-  const split = splitLines(p);
-
   const tl = gsap.timeline({
     scrollTrigger: {
       trigger: stage,
@@ -600,20 +645,21 @@ async function initLensStage() {
   });
 
   tl
-    // 1. the footage pushes in and hands over to the object
-    .fromTo(media, { scale: 1 }, { scale: 2.2, ease: 'power2.in', duration: 0.42 }, 0)
-    .to(center, { scale: 1.45, ease: 'power2.in', duration: 0.34 }, 0)
-    .to(center, { opacity: 0, ease: 'power1.in', duration: 0.14 }, 0.18)
-    .to(['.hero-scrim', media], { opacity: 0, ease: 'power1.in', duration: 0.22 }, 0.22)
-    // 2. the camera owns the frame while we fly into the glass (rig.setProgress)
-    .to(hero, { opacity: 0, duration: 0.04 }, 0.46)
-    .to('#gl', { opacity: 0, duration: 0.04 }, 0.46)
-    // 3. out the far side, the statement is what is there
-    .to(statement, { opacity: 1, duration: 0.05 }, 0.7)
-    .fromTo(statement, { scale: 1.45 }, { scale: 1, ease: 'power2.out', duration: 0.26 }, 0.7)
-    .fromTo(split.lines,
-      { yPercent: 90, opacity: 0, filter: 'blur(14px)' },
-      { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.04, ease: 'power3.out', duration: 0.18 },
+    // 1. the footage dissolves DIRECTLY into the black of the glass: the rig
+    //    is already fading up underneath (camera3d enters over 0.03 to 0.13),
+    //    so this fade window matches it exactly and no paper shows between
+    .fromTo(media, { scale: 1 }, { scale: 1.5, ease: 'power2.in', duration: 0.14 }, 0)
+    .to(center, { scale: 1.25, opacity: 0, ease: 'power2.in', duration: 0.1 }, 0)
+    .to(['.hero-scrim', media], { opacity: 0, ease: 'power1.in', duration: 0.09 }, 0.04)
+    .to(hero, { opacity: 0, duration: 0.03 }, 0.14)
+    .to('#gl', { opacity: 0, duration: 0.03 }, 0.14)
+    // 2. the rig owns the frame: iris opens, we back out through the front
+    //    element until the whole camera stands centred (rig.setProgress)
+    // 3. the sentence takes its place AROUND the camera, half by half
+    .to(statement, { opacity: 1, duration: 0.04 }, 0.72)
+    .fromTo('.st-part',
+      { y: 46, opacity: 0, filter: 'blur(12px)' },
+      { y: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.07, ease: 'power3.out', duration: 0.18 },
       0.74);
 
   ScrollTrigger.refresh();
@@ -886,6 +932,8 @@ async function boot() {
     initViewerCursor();
     initCounters();
     initReel();
+    initReelTilt();
+    initScrollSpy();
     initMarquee();
     state.lenis = initSmoothScroll();
     window.__lenis = state.lenis;

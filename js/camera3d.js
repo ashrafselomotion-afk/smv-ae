@@ -45,8 +45,12 @@ function buildCamera() {
   const softMat = mat(INK_SOFT, { roughness: 0.75, metalness: 0.1 });
   const metalMat = mat(METAL, { roughness: 0.28, metalness: 0.92 });
   const darkMetalMat = mat(METAL_DARK, { roughness: 0.4, metalness: 0.8 });
-  const glassMat = new THREE.MeshStandardMaterial({
-    color: GLASS, roughness: 0.06, metalness: 0.95
+  // unlit and double sided: the exit shot starts INSIDE the lens looking out,
+  // so the glass must render as true black from both faces. a lit metal
+  // material here catches the studio lights and washes out to pale grey,
+  // which is exactly the white flash being avoided.
+  const glassMat = new THREE.MeshBasicMaterial({
+    color: GLASS, side: THREE.DoubleSide
   });
   const accentMat = new THREE.MeshStandardMaterial({
     color: ACCENT, roughness: 0.5, metalness: 0.1,
@@ -175,10 +179,12 @@ function buildCamera() {
   hoodLip.position.z = FRONT_Z + 0.34;
   lens.add(hoodLip);
 
-  // front element, slightly domed
+  // front element, slightly domed. rotation +x maps the cap's pole onto +z so
+  // the apex sits at the front of the barrel (about z 1.5); with -x it ends up
+  // buried inside the body and the lens has no glass in it at all
   const glass = new THREE.Mesh(new THREE.SphereGeometry(0.9, 40, 24, 0, Math.PI * 2, 0, 0.52), glassMat);
-  glass.rotation.x = -Math.PI / 2;
-  glass.position.z = FRONT_Z - 0.72;
+  glass.rotation.x = Math.PI / 2;
+  glass.position.z = 0.6;
   lens.add(glass);
 
   const glassRim = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.02, 10, 48), metalMat);
@@ -186,7 +192,7 @@ function buildCamera() {
   lens.add(glassRim);
 
   /* ---- iris: eight blades that close over the opening ---- */
-  const bladeMat = mat(0x141518, { roughness: 0.7, metalness: 0.3 });
+  const bladeMat = mat(0x141518, { roughness: 0.7, metalness: 0.3, side: THREE.DoubleSide });
   const blades = [];
   const BLADES = 8;
   for (let i = 0; i < BLADES; i += 1) {
@@ -264,26 +270,32 @@ export function createCameraRig({ canvas }) {
   const range = (v, a, b) => clamp01((v - a) / (b - a));
   const ease = (v) => v * v * (3 - 2 * v);
 
+  /**
+   * The move comes OUT of the lens, it does not fly into it.
+   * We open hard on the glass, the iris opens, and the shot retreats back
+   * through the front element until the whole body is revealed and settles
+   * centred. The statement then arrives on that same centre.
+   */
   function apply() {
     const p = progress;
 
-    // the shot swings from a three quarter view round to dead on the glass
-    const turn = ease(range(p, 0, 0.55));
-    rig.rotation.y = lerp(-0.62, 0, turn);
-    rig.rotation.x = lerp(0.16, 0, turn);
-    rig.position.y = lerp(-0.12, 0, turn);
+    // back out through the front element: near the glass first, wide at the end
+    const dolly = ease(range(p, 0.16, 0.82));
+    const z = lerp(FRONT_Z - 0.30, 6.2, dolly);
 
-    // and pushes in, ending just past the front element
-    const dolly = ease(range(p, 0.04, 0.78));
-    const z = lerp(7.4, FRONT_Z - 0.24, dolly);
-    view.position.set(lerp(1.6, 0, turn), lerp(0.95, 0, turn), z);
-    // aim at the body first so it is not cropped, drift onto the glass as we close in
-    view.lookAt(0, lerp(0.1, 0, turn), lerp(0.15, FRONT_Z, dolly));
+    // dead on the glass to begin with, easing round to a three quarter view
+    // so the body reads as an object once it is out in the open
+    const turn = ease(range(p, 0.3, 0.92));
+    rig.rotation.y = lerp(0, -0.5, turn);
+    rig.rotation.x = lerp(0, 0.13, turn);
+    rig.position.y = lerp(0, -0.08, turn);
 
-    // iris shuts as the glass fills the frame, then punches open as we pass
-    const close = ease(range(p, 0.42, 0.66));
-    const open = ease(range(p, 0.66, 0.8));
-    const shut = close * (1 - open);
+    // the swing stays modest so the body settles centred, where the statement lands
+    view.position.set(lerp(0, 0.95, turn), lerp(0, 0.6, turn), z);
+    view.lookAt(lerp(0, 0.12, turn), lerp(0, 0.08, turn), lerp(FRONT_Z, 0.15, dolly));
+
+    // the aperture opens as we come out of it
+    const shut = 1 - ease(range(p, 0.06, 0.42));
     blades.forEach((b, i) => {
       b.rotation.z = (i / blades.length) * Math.PI * 2 + shut * 0.5;
       const blade = b.children[0];
@@ -291,10 +303,10 @@ export function createCameraRig({ canvas }) {
       blade.rotation.z = lerp(0.42, 0.06, shut);
     });
 
-    // fade the rig out once the viewer is through the glass
-    // clear out quickly: the inside of a barrel is a dark frame, and holding it
-    // any longer than the punch through reads as a loading screen
-    shown = 1 - ease(range(p, 0.68, 0.79));
+    // enter immediately, so the fading footage dissolves straight into the
+    // black of the glass with no paper showing between. the rig then STAYS:
+    // it is the centrepiece the statement is laid out around.
+    shown = ease(range(p, 0.03, 0.13));
     rig.visible = shown > 0.01;
     rig.traverse((o) => {
       if (!o.material) return;

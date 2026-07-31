@@ -162,6 +162,9 @@ h1,h2,h3{
 }
 .nav-links a:hover{color:var(--ink)}
 .nav-links a:hover::after{transform:scaleX(1)}
+/* the menu tracks the section under the viewport */
+.nav-links a.on{color:var(--ink)}
+.nav-links a.on::after{transform:scaleX(1);background:var(--accent)}
 
 /* buttons: ink fill + paper text (14.9:1) */
 .btn{
@@ -197,6 +200,15 @@ h1,h2,h3{
   will-change:transform,opacity;
 }
 .stage-on > .statement{opacity:0}
+/* inside the stage the sentence is laid out AROUND the camera: opening half
+   top left, accent half bottom right, the rig holding the centre */
+.stage-on .statement p{
+  position:relative;width:100%;height:100%;max-width:none;
+  font-size:clamp(1.3rem,3.1vw,2.9rem);
+}
+.stage-on .st-part{position:absolute;will-change:transform,opacity,filter}
+.stage-on .st-main{left:0;top:16%;max-width:14ch;text-align:left}
+.stage-on .hi{right:0;bottom:14%;max-width:12ch;text-align:right}
 .stage-on .lens{
   display:block;position:absolute;inset:0;z-index:3;
   width:100%;height:100%;pointer-events:none;
@@ -421,8 +433,11 @@ h1,h2,h3{
   will-change:transform;
 }
 .reel-btn:hover .reel-shot img,.reel-btn:focus-visible .reel-shot img{
-  filter:var(--grade-hot);transform:scale(1.035);
+  filter:var(--grade-hot);transform:scale(1.05);
 }
+/* the frame leans with the cursor; gsap owns the transform */
+.reel-btn{perspective:900px}
+.reel-shot{will-change:transform;transform-style:preserve-3d}
 .reel-caption{display:flex;justify-content:space-between;gap:16px;padding-top:14px}
 .reel-caption h3{
   font-size:clamp(.95rem,1.2vw,1.15rem);font-weight:700;
