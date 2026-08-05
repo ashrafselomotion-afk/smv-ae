@@ -54,7 +54,7 @@ content:
           - { name: heading, label: 'Big centred headline (use a line break for two lines)', type: text }
           - { name: body, label: Supporting line, type: text }
           - name: images
-            label: Event photographs (the first seven fan open like a hand of cards as the section scrolls in)
+            label: Event photographs (these appear one by one as the visitor moves the mouse across the section)
             type: object
             list: true
             fields:

@@ -87,12 +87,6 @@ choreography, Lenis for continuous scrolling, three.js for the opening frame.
   synced to a DOM box, and anything that moves with scroll drifts a frame behind
   its caption. The opening frame never moves in layout, so the effect stays
   exact. If WebGL is unavailable the plain image is shown, graded in CSS.
-- **The events deck, the client rows and the paper tint follow the reference.**
-  The event photographs fan open on scroll like a dealt hand and lift on hover;
-  the events heading rises through an elliptical clip. The clients heading is
-  revealed by a solid bar that sweeps across and away, and of the two client
-  rows the solid one is driven by the scroll itself while the outline one loops.
-  The paper tint drifts a few percent warmer or cooler per section and back.
 - **Reduced motion is honoured.** Smooth scroll, the pan, the parallax, the
   marquee and the WebGL frame all switch off for anyone who asks for less motion.
 
