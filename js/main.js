@@ -7,12 +7,13 @@
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
      lens stage       a 3D cinema camera turns to face us, we fly through its glass into the statement
-     event trail      cursor deals out past events, the section is about coverage
+     event fan        the deck of past events fans open on scroll, hover lifts a card
      counters         count up on entry, draws the eye to the claim
      magnetic buttons small lean toward the cursor, feedback on the primary action
      craft list       hover swaps the preview frame, browsing without leaving the page
      work reel        pinned horizontal pan, the work is the content so it gets the motion
-     marquee          two rows against each other, solid over outline, breadth at a glance
+     marquee          solid row rides the scroll, outline row loops beneath it
+     wash             the paper tint drifts a few percent per section
    All of it collapses under prefers-reduced-motion.
    ========================================================================== */
 
@@ -234,16 +235,17 @@ function renderCraft(craft) {
   activate(0);
 }
 
-/** Builds the pool of frames the cursor spawns, plus the touch fallback grid. */
+/** Builds the fan of event cards, plus the touch fallback grid. */
 function renderEvents(events) {
-  const stage = $('[data-events-stage]');
+  const fan = $('[data-events-fan]');
   const grid = $('[data-events-grid]');
   const items = (events?.images || []).filter((x) => x.image);
   if (!items.length) return;
 
-  if (stage) {
-    stage.innerHTML = items.map((it) => `
-      <figure><img src="${esc(it.image)}" alt="" loading="lazy"></figure>
+  if (fan) {
+    // an odd hand fans symmetrically around an upright centre card
+    fan.innerHTML = items.slice(0, 7).map((it) => `
+      <li><img src="${esc(it.image)}" alt="" loading="lazy"></li>
     `).join('');
   }
   if (grid) {
@@ -254,50 +256,139 @@ function renderEvents(events) {
 }
 
 /**
- * Cursor trail: every time the pointer has travelled far enough, the next frame
- * in the pool is placed under it, pops in and drifts away. This is the section
- * about covering events, so moving through it deals out past events.
+ * The deck fans open on scroll, the same move as the reference's socials hand:
+ * cards start stacked behind the centre and spread into a symmetric arc, each
+ * step rotating further and scaling down, the outer cards trailing the inner
+ * ones. Hovering lifts a card out of the hand.
  */
-function initEventTrail() {
-  const section = $('.events');
-  const stage = $('[data-events-stage]');
-  if (!section || !stage || REDUCED) return;
-  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+function initEventFan() {
+  gsap.matchMedia().add('(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)', () => {
+    const fan = $('[data-events-fan]');
+    const cards = $$('li', fan || document.createElement('ul'));
+    if (!fan || !cards.length) return;
 
-  const frames = $$('figure', stage);
-  if (!frames.length) return;
+    const mid = (cards.length - 1) / 2;
+    const step = () => Math.min(window.innerWidth * 0.135, 215);
 
-  let last = null, travelled = 0, i = 0, z = 1;
-  const STEP = 150;                       // px of pointer travel between frames
+    gsap.set(cards, { y: 40, rotation: 0, scale: 0.66, opacity: 0, zIndex: (i) => 10 - Math.abs(i - mid) });
 
-  section.addEventListener('pointermove', (e) => {
-    const r = stage.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
-
-    if (last) travelled += Math.hypot(x - last.x, y - last.y);
-    last = { x, y };
-    if (travelled < STEP) return;
-    travelled = 0;
-
-    const el = frames[i % frames.length];
-    i += 1;
-
-    gsap.killTweensOf(el);
-    gsap.set(el, {
-      x, y, xPercent: -50, yPercent: -50, zIndex: (z += 1),
-      opacity: 1, scale: 0.82,
-      rotate: gsap.utils.random(-8, 8),
-      clipPath: 'inset(0% 0% 100% 0%)'
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: fan,
+        start: 'top 86%',
+        end: 'top 30%',
+        scrub: 1,
+        invalidateOnRefresh: true
+      }
     });
-    gsap.timeline()
-      .to(el, { clipPath: 'inset(0% 0% 0% 0%)', scale: 1, duration: 0.55, ease: 'expo.out' })
-      .to(el, { opacity: 0, scale: 1.06, duration: 0.7, ease: 'power2.out' }, '+=0.35');
-  }, { passive: true });
+    cards.forEach((card, i) => {
+      const k = i - mid;
+      tl.to(card, {
+        x: () => k * step(),
+        y: k * k * 21,
+        rotation: k * 7,
+        scale: 1 - Math.abs(k) * 0.075,
+        opacity: 1,
+        ease: 'power2.out',
+        duration: 0.8
+      }, Math.abs(k) * 0.06);
+    });
 
-  section.addEventListener('pointerleave', () => {
-    last = null; travelled = 0;
-    gsap.to(frames, { opacity: 0, duration: 0.5, ease: 'power2.out', overwrite: true });
+    // hover lifts the card out of the hand
+    cards.forEach((card) => {
+      card.addEventListener('pointerenter', () => {
+        gsap.to(card, { scale: '+=0.07', y: '-=14', duration: 0.35, ease: 'power3.out', overwrite: 'auto' });
+        card.style.zIndex = 30;
+      });
+      card.addEventListener('pointerleave', () => {
+        const i = cards.indexOf(card);
+        const k = i - mid;
+        gsap.to(card, {
+          scale: 1 - Math.abs(k) * 0.075, y: k * k * 21,
+          duration: 0.45, ease: 'power3.out', overwrite: 'auto'
+        });
+        card.style.zIndex = 10 - Math.abs(k);
+      });
+    });
+
+    return () => { tl.scrollTrigger?.kill(); tl.kill(); gsap.set(cards, { clearProps: 'all' }); };
+  });
+}
+
+/** The events heading rises through an elliptical clip, a curved reveal. */
+function initEventsHeading() {
+  const h = $('[data-events-heading]');
+  if (!h || REDUCED) return;
+  const lines = h.textContent.split('\n');
+  h.innerHTML = lines.map((l) => `<span class="ov-wrap"><span class="ov-line">${esc(l)}</span></span>`).join('');
+  gsap.fromTo($$('.ov-line', h),
+    { yPercent: 112 },
+    {
+      yPercent: 0, stagger: 0.09, ease: 'power3.out', duration: 1,
+      scrollTrigger: { trigger: h, start: 'top 86%', end: 'top 45%', scrub: 1 }
+    });
+}
+
+/** Clients heading: a solid bar sweeps across each line, then away, and the
+    text is what it leaves behind. */
+function initClientsSweep() {
+  const h = $('[data-clients-heading]');
+  if (!h || REDUCED) return;
+  const lines = h.textContent.split('\n');
+  h.innerHTML = lines.map((l) => `<span class="sw-line"><i>${esc(l)}</i><b aria-hidden="true"></b></span>`).join('');
+  $$('.sw-line', h).forEach((line, i) => {
+    const bar = $('b', line);
+    const txt = $('i', line);
+    gsap.timeline({
+      scrollTrigger: { trigger: h, start: 'top 82%', once: true },
+      delay: i * 0.14
+    })
+      .to(bar, { scaleX: 1, duration: 0.4, ease: 'power2.inOut' })
+      .set(txt, { clipPath: 'inset(0 0% 0 0)' })
+      .set(bar, { transformOrigin: 'right center' })
+      .to(bar, { scaleX: 0, duration: 0.4, ease: 'power2.inOut' });
+  });
+}
+
+/**
+ * The page tint drifts as you travel: each keyed section washes the paper
+ * towards its own temperature and back. The shift is a few percent, felt more
+ * than seen, and every colour keeps the same contrast floor.
+ */
+function initBackgroundWash() {
+  if (REDUCED) return;
+  const root = document.documentElement;
+  const BASE = { paper: '#F1F1EF', sunk: '#E7E7E3' };
+  const wash = (paper, sunk) => {
+    const proxy = {
+      p: getComputedStyle(root).getPropertyValue('--paper').trim() || BASE.paper,
+      s: getComputedStyle(root).getPropertyValue('--paper-sunk').trim() || BASE.sunk
+    };
+    const ip = gsap.utils.interpolate(proxy.p, paper);
+    const is = gsap.utils.interpolate(proxy.s, sunk);
+    gsap.to(proxy, {
+      p: 1, duration: 1.1, ease: 'power1.inOut', overwrite: 'auto',
+      onUpdate() {
+        const t = this.progress();
+        root.style.setProperty('--paper', ip(t));
+        root.style.setProperty('--paper-sunk', is(t));
+      }
+    });
+  };
+  [
+    ['.events', '#F3F0E7', '#E9E5D8'],
+    ['.reel', '#EDEFF0', '#E2E5E6'],
+    ['.contact', '#F3EFE8', '#E9E4DA']
+  ].forEach(([sel, paper, sunk]) => {
+    const el = $(sel);
+    if (!el) return;
+    ScrollTrigger.create({
+      trigger: el, start: 'top 55%', end: 'bottom 45%',
+      onEnter: () => wash(paper, sunk),
+      onEnterBack: () => wash(paper, sunk),
+      onLeave: () => wash(BASE.paper, BASE.sunk),
+      onLeaveBack: () => wash(BASE.paper, BASE.sunk)
+    });
   });
 }
 
@@ -790,17 +881,21 @@ function initReel() {
 
 function initMarquee() {
   if (REDUCED) return;
-  const rows = [
-    { el: $('[data-mq]'), from: 0, to: -50, dur: 52 },
-    { el: $('[data-mq-out]'), from: -50, to: 0, dur: 64 }
-  ];
-  rows.forEach(({ el, from, to, dur }) => {
-    if (!el || !el.children.length) return;
-    const loop = gsap.fromTo(el, { xPercent: from },
-      { xPercent: to, ease: 'none', duration: dur, repeat: -1 });
-    el.addEventListener('pointerenter', () => gsap.to(loop, { timeScale: 0.15, duration: 0.5 }));
-    el.addEventListener('pointerleave', () => gsap.to(loop, { timeScale: 1, duration: 0.5 }));
-  });
+  // the solid row is tied to the scroll itself, so it answers the hand;
+  // the outline row runs on its own clock beneath it
+  const solid = $('[data-mq]');
+  if (solid && solid.children.length) {
+    gsap.fromTo(solid, { xPercent: -4 }, {
+      xPercent: -34, ease: 'none',
+      scrollTrigger: { trigger: '.clients', start: 'top bottom', end: 'bottom top', scrub: 1 }
+    });
+  }
+  const out = $('[data-mq-out]');
+  if (out && out.children.length) {
+    const loop = gsap.fromTo(out, { xPercent: -50 }, { xPercent: 0, ease: 'none', duration: 60, repeat: -1 });
+    out.addEventListener('pointerenter', () => gsap.to(loop, { timeScale: 0.15, duration: 0.5 }));
+    out.addEventListener('pointerleave', () => gsap.to(loop, { timeScale: 1, duration: 0.5 }));
+  }
 }
 
 function initSmoothScroll() {
@@ -927,7 +1022,10 @@ async function boot() {
     prepareStatement();
     await initLensStage();    // loads the 3D rig, sets state.stageOn on success
     initStatementFallback();  // only runs when the stage is not armed
-    initEventTrail();
+    initEventFan();
+    initEventsHeading();
+    initClientsSweep();
+    initBackgroundWash();
     initMagnetic();
     initViewerCursor();
     initCounters();
