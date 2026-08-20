@@ -214,59 +214,77 @@ h1,h2,h3{
   width:100%;height:100%;pointer-events:none;
 }
 
-/* ============================ 1 / hero ============================ */
+/* ============================ 1 / hero ============================
+   The layout of the reference: a stacked headline top left, ONE large object
+   crossing the centre of the frame (our showreel, tilted), and a giant cropped
+   wordmark lying along the bottom, half behind the object. The header is the
+   page's single dark block; it dissolves straight into the black of the lens.
+   ========================================================================== */
 .hero{
   position:relative;z-index:var(--z-content);
-  min-height:100dvh;display:grid;place-items:center;
-  padding:clamp(104px,14vh,140px) var(--pad) clamp(36px,6vh,76px);
-  overflow:hidden;
+  min-height:100dvh;background:var(--ink);overflow:hidden;
 }
-/* the work plays here, full bleed. this box is also the rect the WebGL
-   plane is synced to, so it must stay transparent once the shader has it. */
+
+/* top left stack */
+.hero-center{
+  position:absolute;z-index:3;
+  top:calc(68px + clamp(16px,4vh,44px));left:var(--pad);
+  max-width:36ch;text-align:left;will-change:transform,opacity;
+}
+.hero-title{
+  font-size:clamp(1.4rem,2.6vw,2.6rem);
+  font-variation-settings:'wdth' 106;
+  color:var(--paper);
+  margin-bottom:clamp(12px,1.8vh,20px);
+}
+.hero-title .ln{display:block;overflow:hidden;padding-bottom:.06em}
+.hero-title .ln i{display:block;font-style:normal;will-change:transform}
+.hero-sub{
+  font-size:clamp(.9rem,1.05vw,1.05rem);
+  color:rgba(241,241,239,.68);max-width:34ch;line-height:1.5;
+  margin:0 0 clamp(14px,2.2vh,24px);
+}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+/* dark block variants: same buttons, inverted */
+.hero .btn{background:var(--paper);color:var(--ink)}
+.hero .btn:hover{background:var(--accent);color:#fff}
+.hero .btn-line{color:var(--paper);border-color:rgba(241,241,239,.55)}
+.hero .btn-line:hover{color:var(--accent);border-color:var(--accent)}
+
+/* the object: the reel crosses the middle of the frame */
 .hero-media{
-  position:absolute;inset:0;margin:0;overflow:hidden;
-  background:var(--paper-sunk);will-change:transform;
+  /* biased right and down, the way the reference's object crosses the frame,
+     so the top left column stays clear of it */
+  position:absolute;z-index:2;left:57%;top:57%;margin:0;
+  width:min(68vw,1040px);aspect-ratio:21/9;
+  transform:translate(-50%,-50%) rotate(-5deg);
+  overflow:hidden;background:#0b0c0e;
+  box-shadow:0 30px 90px rgba(0,0,0,.55);
+  will-change:transform;
 }
 .hero-media img,.hero-media video{
   position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   filter:var(--grade);opacity:0;transition:opacity 1.4s var(--ease);
 }
 .hero-media img:only-of-type,.hero-media img.on,.hero-media video{opacity:1}
-/* the shader has the frames, so the DOM stack stops painting but holds the box */
 .hero-media.gl-ready{background:transparent}
 .hero-media.gl-ready img{opacity:0!important;transition:none}
 
-/* paper scrim: keeps ink type readable over any frame without dimming the page */
-.hero-scrim{
-  position:absolute;inset:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 76% 62% at 50% 50%,
-      color-mix(in srgb,var(--paper) 86%,transparent) 0%,
-      color-mix(in srgb,var(--paper) 62%,transparent) 45%,
-      color-mix(in srgb,var(--paper) 30%,transparent) 100%),
-    linear-gradient(180deg,
-      color-mix(in srgb,var(--paper) 55%,transparent) 0%,
-      transparent 30%,
-      transparent 68%,
-      color-mix(in srgb,var(--paper) 55%,transparent) 100%);
+/* the name lies along the bottom, cropped, half behind the reel */
+.hero-wordmark{
+  position:absolute;z-index:1;left:0;bottom:-0.14em;
+  padding-left:calc(var(--pad) * .5);
+  font-weight:800;font-variation-settings:'wdth' 116;
+  font-size:clamp(84px,17vw,272px);line-height:1;
+  letter-spacing:-.035em;text-transform:uppercase;white-space:nowrap;
+  color:rgba(241,241,239,.34);
+  pointer-events:none;user-select:none;
+  will-change:opacity;
 }
-.hero-center{
-  position:relative;z-index:2;text-align:center;
-  width:100%;max-width:1180px;will-change:transform,opacity;
-}
-.hero-title{
-  font-size:clamp(2.15rem,5.4vw,5.6rem);
-  font-variation-settings:'wdth' 106;
-  margin-bottom:clamp(18px,2.4vh,32px);
-}
-.hero-title .ln{display:block;overflow:hidden;padding-bottom:.06em}
-.hero-title .ln i{display:block;font-style:normal;will-change:transform}
-.hero-sub{
-  font-size:clamp(.96rem,1.24vw,1.18rem);
-  color:var(--ink-70);max-width:46ch;line-height:1.45;
-  margin:0 auto clamp(22px,3.2vh,38px);
-}
-.hero-actions{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+.hero-wordmark i{font-style:normal;color:rgba(228,56,27,.5)}
+
+/* no paper scrim on the dark block; contrast comes from the layout itself */
+.hero-scrim{display:none}
 
 /* ============================ 2 / statement ============================
    Centred on the same optical axis as the header, so the zoom lands on it
@@ -635,6 +653,9 @@ h1,h2,h3{
 }
 @media (max-width:760px){
   .nav-links{display:none}
+  .hero-center{max-width:none;right:var(--pad)}
+  .hero-media{left:50%;width:94vw;aspect-ratio:16/9;top:58%;transform:translate(-50%,-50%) rotate(-3deg)}
+  .hero-wordmark{font-size:clamp(56px,21vw,110px);bottom:-0.1em}
   .numbers-row,.contact-meta{grid-template-columns:repeat(2,1fr);gap:26px var(--gap)}
   .statement p,.clients-head{max-width:none}
   /* the reel unrolls into a vertical stack instead of panning */

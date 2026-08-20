@@ -115,7 +115,8 @@ function renderHeroMedia(site) {
     el.muted = true; el.playsInline = true; el.preload = 'auto';
     el.setAttribute('muted', '');
     el.setAttribute('playsinline', '');
-    if (hero.image) el.poster = hero.image;
+    // no poster: a paused, never-seeked video keeps its poster on top forever,
+    // so the reel's own first frame is the opening image
     // no mouse, nothing to scrub: phones get the reel as a plain loop
     const coarse = window.matchMedia('(hover: none), (pointer: coarse)').matches;
     if (coarse && !REDUCED) {
@@ -168,6 +169,8 @@ function renderChrome(site) {
   $$('[data-nav]').forEach((el) => setText(el, n[el.dataset.nav]));
   if (site.brand?.name) {
     $('.logo').innerHTML = `${esc(site.brand.name)}<span>${esc(site.brand.suffix || '')}</span>`;
+    const wm = $('[data-hero-wordmark]');
+    if (wm) wm.innerHTML = `${esc(site.brand.name)}<i>${esc(site.brand.suffix || '')}</i>`;
   }
   Object.entries(site.hero || {}).forEach(([k, v]) => {
     $$(`[data-hero="${k}"]`).forEach((el) => setText(el, v));
@@ -674,6 +677,7 @@ async function initLensStage() {
     //    so this fade window matches it exactly and no paper shows between
     .fromTo(media, { scale: 1 }, { scale: 1.5, ease: 'power2.in', duration: 0.14 }, 0)
     .to(center, { scale: 1.25, opacity: 0, ease: 'power2.in', duration: 0.1 }, 0)
+    .to('.hero-wordmark', { opacity: 0, ease: 'power1.in', duration: 0.1 }, 0.02)
     .to(['.hero-scrim', media], { opacity: 0, ease: 'power1.in', duration: 0.09 }, 0.04)
     .to(hero, { opacity: 0, duration: 0.03 }, 0.14)
     .to('#gl', { opacity: 0, duration: 0.03 }, 0.14)
