@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     hero track       footage plays toward the cursor's pose, forward or in reverse
+     hero track       every journey moves the way the hand went, via bridge frames
      statement        a focus pull: lines rise through masks, the accent phrase colours last
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
@@ -839,18 +839,19 @@ function initMobileMenu() {
 }
 
 /**
- * The character tracks the hand with real footage in BOTH directions.
- * The three poses live on the clip's timeline at:
- *   1.45s  aiming straight out of the screen
- *   1.94s  aiming hard to the viewer's right
- *   3.80s  aiming hard to the viewer's left
- * Crossing a zone boundary sends playback toward the target pose by the
- * shortest path: forward as native playback, backward as frame stepping
- * (this clip decodes a backward step in about 20ms, measured, so reverse
- * reads as smooth motion). A direction change retargets INSTANTLY, even mid
- * swing, which is what makes it feel like he is following the hand. Long
- * journeys run slightly fast (1.5x) so he never lags seconds behind.
- * Arrival pauses exactly on the pose. Every frame shown is real footage.
+ * The character tracks the hand with real footage, and every journey moves in
+ * the direction the hand went. Poses and bridge frames on the clip timeline:
+ *   0.97s  mild left, camera at the eye        (bridge)
+ *   1.45s  FRONT, aiming straight out
+ *   1.94s  RIGHT, hard profile
+ *   3.05s  mild left inside the return swing   (bridge, matches 0.97s)
+ *   3.80s  LEFT, hard profile
+ * front<->right play directly. front->left plays IN REVERSE to the 0.97s
+ * bridge (a leftward turn), cuts invisibly to its 3.05s twin, and plays on
+ * into the hard left; left->front is the same road home. So the right aim is
+ * never shown on a leftward journey. Journeys are legs (play forward, step
+ * backward, invisible cut) run by a generation guarded engine; the mouse can
+ * retarget mid leg and the plan recomputes from wherever he is.
  */
 function initHeroScrub() {
   const fig = $('[data-hero-media]');
@@ -858,80 +859,106 @@ function initHeroScrub() {
   if (!video || REDUCED) return;
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const STOP = { front: 1.45, right: 1.94, left: 3.80 };
+  const F = 1.45, R = 1.94, L = 3.80;   // the poses
+  const ML = 0.97, LB = 3.05;           // the matching left bridge frames
+  const STOP = { front: F, right: R, left: L };
   const EPS = 0.05;
-  const BACK_STEP = 0.05;      // seconds of footage per backward step (~1.5x)
+  const BACK_STEP = 0.05;
   const ANCHOR = 0.58;
   const BAND = 0.12;
 
   let zone = 'front';
-  let target = STOP.front;
   let gen = 0;
+  let timer = 0;
 
-  const settle = () => {
-    mode = 'idle';
+  const finish = () => {
     video.pause();
     video.playbackRate = 1;
-    video.currentTime = target;
+    video.currentTime = STOP[zone];
   };
 
-  let mode = 'idle';           // 'fwd' while native playback runs toward target
+  /* ---- leg primitives, each calls done() exactly once, all gen guarded ---- */
 
-  /* forward arrival check, callable from any clock */
-  const fwdCheck = () => {
-    if (mode !== 'fwd') return;
-    if (video.currentTime >= target - EPS) { mode = 'idle'; settle(); }
-  };
-
-  /* forward: native playback, checked every frame, with two backup clocks
-     (timeupdate and a wall clock timer) because any one clock can starve
-     and let playback sail past the pose */
-  const fwdLoop = (g) => {
+  const seekOnce = (g, to, done) => {
     if (g !== gen) return;
-    fwdCheck();
-    if (mode !== 'fwd') return;
-    if (video.paused) video.play().catch(() => {});
-    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => fwdLoop(g));
-    else requestAnimationFrame(() => fwdLoop(g));
-  };
-  video.addEventListener('timeupdate', fwdCheck);
-
-  let timer = 0;
-  const scheduleFwd = () => {
-    clearTimeout(timer);
-    const g = gen;
-    const eta = (target - video.currentTime) / (video.playbackRate || 1);
-    timer = setTimeout(() => { if (g === gen) fwdCheck(); }, Math.max(0, eta * 1000) + 40);
-  };
-
-  /* backward: chained frame steps; each seek completes before the next */
-  const backStep = (g) => {
-    if (g !== gen) return;
-    const next = video.currentTime - BACK_STEP;
-    if (next <= target + EPS) { settle(); return; }
-    const on = () => { video.removeEventListener('seeked', on); backStep(g); };
+    const on = () => { video.removeEventListener('seeked', on); if (g === gen) done(); };
     video.addEventListener('seeked', on);
-    video.currentTime = next;
+    video.currentTime = to;
+  };
+
+  const fwdTo = (g, to, done) => {
+    if (g !== gen) return;
+    const distance = to - video.currentTime;
+    video.playbackRate = distance > 0.7 ? 1.5 : 1;
+    video.play().catch(() => {});
+    const check = () => {
+      if (g !== gen) return false;
+      if (video.currentTime >= to - EPS) {
+        video.pause();
+        video.playbackRate = 1;
+        done();
+        return false;
+      }
+      return true;
+    };
+    const loop = () => {
+      if (!check()) return;
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
+      else requestAnimationFrame(loop);
+    };
+    loop();
+    // backup clocks: timeupdate plus a wall clock timer, since any one clock
+    // can starve and let playback sail past the mark
+    const onTime = () => { if (!check()) video.removeEventListener('timeupdate', onTime); };
+    video.addEventListener('timeupdate', onTime);
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (g === gen) check(); }, Math.max(0, distance / (video.playbackRate || 1)) * 1000 + 60);
+  };
+
+  const backTo = (g, to, done) => {
+    if (g !== gen) return;
+    video.pause();
+    video.playbackRate = 1;
+    const step = () => {
+      if (g !== gen) return;
+      const next = video.currentTime - BACK_STEP;
+      if (next <= to + EPS) { done(); return; }
+      seekOnce(g, next, step);
+    };
+    step();
+  };
+
+  /* ---- the journey planner: legs from wherever he is to the zone's pose ---- */
+
+  const plan = () => {
+    const c = video.currentTime;
+    if (zone === 'left') {
+      if (c <= F + 0.1) return [{ back: ML }, { cut: LB }, { fwd: L }];
+      return [{ fwd: L }];                     // from the right: the natural swing
+    }
+    if (zone === 'front') {
+      if (c >= 2.9) return [{ back: LB }, { cut: ML }, { fwd: F }];
+      if (c > F) return [{ back: F }];         // from the right: reverse straight home
+      return [{ fwd: F }];
+    }
+    if (c > R) return [{ back: R }];           // from the left: reverse of the swing
+    return [{ fwd: R }];
   };
 
   const go = () => {
     gen += 1;
     const g = gen;
-    const c = video.currentTime;
-    if (Math.abs(c - target) <= EPS) { settle(); return; }
-    if (target > c) {
-      const distance = target - c;
-      video.playbackRate = distance > 0.7 ? 1.5 : 1;
-      mode = 'fwd';
-      video.play().catch(() => {});
-      fwdLoop(g);
-      scheduleFwd();
-    } else {
-      mode = 'idle';
-      video.pause();
-      video.playbackRate = 1;
-      backStep(g);
-    }
+    const legs = plan();
+    const next = () => {
+      if (g !== gen) return;
+      const leg = legs.shift();
+      if (!leg) { finish(); return; }
+      if (leg.cut !== undefined) seekOnce(g, leg.cut, next);
+      else if (leg.fwd !== undefined) fwdTo(g, leg.fwd, next);
+      else backTo(g, leg.back, next);
+    };
+    if (Math.abs(video.currentTime - STOP[zone]) <= EPS) { finish(); return; }
+    next();
   };
 
   window.addEventListener('mousemove', (e) => {
@@ -940,27 +967,24 @@ function initHeroScrub() {
     const z = f < ANCHOR - BAND ? 'left' : f > ANCHOR + BAND ? 'right' : 'front';
     if (z === zone) return;
     zone = z;
-    target = STOP[z];
     go();
   }, { passive: true });
 
-  // safety nets: never rest anywhere but a pose
-  video.addEventListener('ended', () => { settle(); });
+  // the browser can pause media on its own; replan from wherever he stopped
   video.addEventListener('pause', () => {
-    // the browser can pause media on its own; resume the journey if mid way
     const g = gen;
     setTimeout(() => {
       if (g !== gen || !video.paused) return;
-      if (Math.abs(video.currentTime - target) > EPS) go();
+      if (Math.abs(video.currentTime - STOP[zone]) > EPS) go();
     }, 180);
   });
+  video.addEventListener('ended', () => { finish(); });
 
   // open paused on the front pose whenever the media (re)loads
   video.addEventListener('loadeddata', () => {
     gen += 1;
     zone = 'front';
-    target = STOP.front;
-    settle();
+    finish();
   });
 
   // a host without Range request support serves a video whose seekable range
@@ -969,7 +993,7 @@ function initHeroScrub() {
   const ensureSeekable = async () => {
     if (rescued) return;
     const ok = video.seekable.length && video.seekable.end(0) >= (video.duration || 0) - 0.1;
-    if (ok) { video.currentTime = STOP.front; return; }
+    if (ok) { video.currentTime = F; return; }
     rescued = true;
     try {
       const res = await fetch(video.currentSrc || video.src);
