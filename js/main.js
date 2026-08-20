@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     hero scrub       horizontal mouse movement plays the header reel back and forth
+     hero track       the character aims where the cursor is: left, at you, right
      statement        a focus pull: lines rise through masks, the accent phrase colours last
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
@@ -839,11 +839,16 @@ function initMobileMenu() {
 }
 
 /**
- * The header follows the hand: horizontal mouse movement plays the reel
- * forward and backward. Movement is accumulated into a target time; only one
- * seek is ever in flight, and the seeked handler picks up whatever movement
- * happened while the last frame was decoding, so fast mice cannot flood the
- * decoder with seek requests.
+ * The character tracks the hand. The reel is a camera sweep, and three frames
+ * of it are the poses that matter:
+ *   0.97s  aiming to the viewer's left
+ *   1.45s  aiming straight out of the screen
+ *   1.94s  aiming hard to the viewer's right
+ * The mouse's position across the viewport is mapped into that segment,
+ * anchored on where the character stands, so with the cursor to his left he
+ * aims left, in front of him he shoots straight at you, and to his right he
+ * swings right. The target eases toward the mapped frame and only one seek is
+ * ever in flight, so the motion reads as him following you, not jumping.
  */
 function initHeroScrub() {
   const fig = $('[data-hero-media]');
@@ -851,12 +856,45 @@ function initHeroScrub() {
   if (!video || REDUCED) return;
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const SENSITIVITY = 0.8;   // one screen width of travel = 80% of the reel
-  let prevX = null;
-  let target = 0;
+  const T_LEFT = 0.97, T_FRONT = 1.45, T_RIGHT = 1.94;
+  const ANCHOR = 0.58;          // the character's x, as a fraction of the viewport
+  let mapped = T_FRONT;
+  let target = T_FRONT;
   let seeking = false;
+  let running = false;
 
-  const seekTo = (t) => { seeking = true; video.currentTime = t; };
+  const seekTo = (tm) => { seeking = true; video.currentTime = tm; };
+
+  window.addEventListener('mousemove', (e) => {
+    if (!video.duration || Number.isNaN(video.duration)) return;
+    const f = e.clientX / window.innerWidth;
+    mapped = f < ANCHOR
+      ? T_LEFT + (f / ANCHOR) * (T_FRONT - T_LEFT)
+      : T_FRONT + ((f - ANCHOR) / (1 - ANCHOR)) * (T_RIGHT - T_FRONT);
+    if (!running) { running = true; requestAnimationFrame(follow); }
+  }, { passive: true });
+
+  function follow() {
+    // ease toward the pointer's frame; stop ticking once settled
+    target += (mapped - target) * 0.14;
+    target = Math.max(T_LEFT, Math.min(T_RIGHT, target));
+    if (!seeking && Math.abs(target - video.currentTime) > 0.02) seekTo(target);
+    if (Math.abs(mapped - target) > 0.005 || Math.abs(target - video.currentTime) > 0.02) {
+      requestAnimationFrame(follow);
+    } else {
+      running = false;
+    }
+  }
+
+  video.addEventListener('seeked', () => { seeking = false; });
+  // a src swap (the blob rescue) can strand a seek in flight; clear the flag
+  // whenever the media resets so the follow loop can drive the new source
+  video.addEventListener('loadstart', () => { seeking = false; });
+  video.addEventListener('loadeddata', () => {
+    seeking = false;
+    target = T_FRONT;
+    seekTo(T_FRONT);
+  });
 
   // a host without Range request support serves a video whose seekable range
   // is [0,0], and every seek snaps back to the first frame. fetching the file
@@ -865,7 +903,7 @@ function initHeroScrub() {
   const ensureSeekable = async () => {
     if (rescued) return;
     const ok = video.seekable.length && video.seekable.end(0) >= (video.duration || 0) - 0.1;
-    if (ok) return;
+    if (ok) { seekTo(T_FRONT); return; }   // open on the front pose
     rescued = true;
     try {
       const res = await fetch(video.currentSrc || video.src);
@@ -876,24 +914,6 @@ function initHeroScrub() {
   };
   if (video.readyState >= 1) ensureSeekable();
   video.addEventListener('durationchange', ensureSeekable);
-
-  window.addEventListener('mousemove', (e) => {
-    if (!video.duration || Number.isNaN(video.duration)) return;
-    if (prevX === null) { prevX = e.clientX; return; }
-    const delta = e.clientX - prevX;
-    prevX = e.clientX;
-    target = Math.min(
-      video.duration,
-      Math.max(0, target + (delta / window.innerWidth) * SENSITIVITY * video.duration)
-    );
-    if (!seeking) seekTo(target);
-  }, { passive: true });
-
-  video.addEventListener('seeked', () => {
-    if (Math.abs(target - video.currentTime) > 0.01) seekTo(target);
-    else seeking = false;
-  });
-  video.addEventListener('loadedmetadata', () => { target = video.currentTime; });
 }
 
 function heroCrossfade() {
