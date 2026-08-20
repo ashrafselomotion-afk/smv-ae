@@ -43,6 +43,7 @@ content:
           - { name: ctaPrimary, label: Main button label, type: string }
           - { name: image, label: Opening image, type: image }
           - { name: video, label: 'Showreel that plays behind the headline. Paste an mp4 link for the best result. Leave empty to keep the looping placeholder below.', type: string }
+          - { name: scrub, label: 'Header video that follows the mouse: moving left and right plays it back and forth. Needs a direct mp4 link. Takes priority over the showreel.', type: string }
           - { name: loop, label: 'Looping placeholder played when no showreel is set. Replace this with real footage when you have it.', type: image }
 
       - { name: statement, label: Big statement sentence, type: text }

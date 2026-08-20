@@ -6,6 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
+     hero scrub       horizontal mouse movement plays the header reel back and forth
      lens stage       a 3D cinema camera turns to face us, we fly through its glass into the statement
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
@@ -103,6 +104,29 @@ function renderHeroMedia(site) {
   if (!fig) return;
   const hero = site.hero || {};
   const v = embed(hero.video);
+
+  // a scrub video outranks everything: the visitor's hand plays the reel.
+  // needs a direct mp4; hosted players cannot be seeked frame by frame.
+  const sc = embed(hero.scrub);
+  if (sc && sc.type === 'video') {
+    fig.innerHTML = '';
+    const el = document.createElement('video');
+    el.src = sc.src;
+    el.muted = true; el.playsInline = true; el.preload = 'auto';
+    el.setAttribute('muted', '');
+    el.setAttribute('playsinline', '');
+    if (hero.image) el.poster = hero.image;
+    // no mouse, nothing to scrub: phones get the reel as a plain loop
+    const coarse = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (coarse && !REDUCED) {
+      el.autoplay = true; el.loop = true;
+      el.setAttribute('autoplay', ''); el.setAttribute('loop', '');
+    }
+    fig.appendChild(el);
+    fig.dataset.mode = 'scrub';
+    if (coarse && !REDUCED) el.play?.().catch(() => {});
+    return;
+  }
 
   if (v && v.type === 'video') {
     fig.innerHTML = '';
@@ -827,6 +851,64 @@ function initSmoothScroll() {
 }
 
 /** Plain crossfade through the stills stack when there is no WebGL context. */
+/**
+ * The header follows the hand: horizontal mouse movement plays the reel
+ * forward and backward. Movement is accumulated into a target time; only one
+ * seek is ever in flight, and the seeked handler picks up whatever movement
+ * happened while the last frame was decoding, so fast mice cannot flood the
+ * decoder with seek requests.
+ */
+function initHeroScrub() {
+  const fig = $('[data-hero-media]');
+  const video = fig && fig.dataset.mode === 'scrub' ? $('video', fig) : null;
+  if (!video || REDUCED) return;
+  if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+  const SENSITIVITY = 0.8;   // one screen width of travel = 80% of the reel
+  let prevX = null;
+  let target = 0;
+  let seeking = false;
+
+  const seekTo = (t) => { seeking = true; video.currentTime = t; };
+
+  // a host without Range request support serves a video whose seekable range
+  // is [0,0], and every seek snaps back to the first frame. fetching the file
+  // once and playing it from a blob URL makes it fully seekable anywhere.
+  let rescued = false;
+  const ensureSeekable = async () => {
+    if (rescued) return;
+    const ok = video.seekable.length && video.seekable.end(0) >= (video.duration || 0) - 0.1;
+    if (ok) return;
+    rescued = true;
+    try {
+      const res = await fetch(video.currentSrc || video.src);
+      const blob = await res.blob();
+      video.src = URL.createObjectURL(blob);
+      video.load();
+    } catch (err) { /* stays unseekable; the header simply holds its poster */ }
+  };
+  if (video.readyState >= 1) ensureSeekable();
+  video.addEventListener('durationchange', ensureSeekable);
+
+  window.addEventListener('mousemove', (e) => {
+    if (!video.duration || Number.isNaN(video.duration)) return;
+    if (prevX === null) { prevX = e.clientX; return; }
+    const delta = e.clientX - prevX;
+    prevX = e.clientX;
+    target = Math.min(
+      video.duration,
+      Math.max(0, target + (delta / window.innerWidth) * SENSITIVITY * video.duration)
+    );
+    if (!seeking) seekTo(target);
+  }, { passive: true });
+
+  video.addEventListener('seeked', () => {
+    if (Math.abs(target - video.currentTime) > 0.01) seekTo(target);
+    else seeking = false;
+  });
+  video.addEventListener('loadedmetadata', () => { target = video.currentTime; });
+}
+
 function heroCrossfade() {
   const fig = $('[data-hero-media]');
   if (!fig || fig.dataset.mode !== 'stills') return;
@@ -939,6 +1021,7 @@ async function boot() {
     window.__lenis = state.lenis;
   }
 
+  initHeroScrub();
   await initGL();
   window.ScrollTrigger?.refresh();
 

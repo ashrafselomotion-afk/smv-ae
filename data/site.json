@@ -16,6 +16,7 @@
     "ctaPrimary": "See the work",
     "image": "assets/uploads/placeholder-hero.jpg",
     "video": "",
+    "scrub": "assets/uploads/header-scrub.mp4",
     "loop": "assets/uploads/placeholder-header-loop.webp",
     "background": [
       {
