@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     hero track       the reel plays for real between poses and pauses on each aim
+     hero track       footage plays toward the cursor's pose, forward or in reverse
      statement        a focus pull: lines rise through masks, the accent phrase colours last
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
@@ -839,16 +839,18 @@ function initMobileMenu() {
 }
 
 /**
- * The character tracks the hand by actually PLAYING the reel, pausing on the
- * three aim frames:
+ * The character tracks the hand with real footage in BOTH directions.
+ * The three poses live on the clip's timeline at:
  *   1.45s  aiming straight out of the screen
  *   1.94s  aiming hard to the viewer's right
  *   3.80s  aiming hard to the viewer's left
- * Video only plays forward, so every move runs forward along the sweep and
- * pauses on the target pose; a move that would need to go backwards keeps
- * playing to the end of the sweep and re-enters at 0.97s, a frame so close to
- * the hard left pose that the cut cannot be seen, then swings on naturally.
- * All motion on screen is real playback, never seek-stepping.
+ * Crossing a zone boundary sends playback toward the target pose by the
+ * shortest path: forward as native playback, backward as frame stepping
+ * (this clip decodes a backward step in about 20ms, measured, so reverse
+ * reads as smooth motion). A direction change retargets INSTANTLY, even mid
+ * swing, which is what makes it feel like he is following the hand. Long
+ * journeys run slightly fast (1.5x) so he never lags seconds behind.
+ * Arrival pauses exactly on the pose. Every frame shown is real footage.
  */
 function initHeroScrub() {
   const fig = $('[data-hero-media]');
@@ -857,101 +859,84 @@ function initHeroScrub() {
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
   const STOP = { front: 1.45, right: 1.94, left: 3.80 };
-  const REENTRY = 0.97;      // left-ish frame: the invisible seam after the hard left
-  const WRAP_AT = 3.78;      // just before the hard left, where the seam cuts
-  const EPS = 0.045;         // about one frame of slack when catching a stop
-  const ANCHOR = 0.58;       // the character's x, as a fraction of the viewport
+  const EPS = 0.05;
+  const BACK_STEP = 0.05;      // seconds of footage per backward step (~1.5x)
+  const ANCHOR = 0.58;
   const BAND = 0.12;
 
   let zone = 'front';
   let target = STOP.front;
-  let gen = 0;               // a retarget invalidates every scheduled callback
+  let gen = 0;
 
-  /** One step of the follow logic; safe to call from any clock. */
-  const step = () => {
-    if (video.paused) return;
+  const settle = () => {
+    video.pause();
+    video.playbackRate = 1;
+    video.currentTime = target;
+  };
+
+  /* forward: native playback, checked every frame */
+  const fwdLoop = (g) => {
+    if (g !== gen) return;
+    if (video.currentTime >= target - EPS) { settle(); return; }
+    if (video.paused) video.play().catch(() => {});
+    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => fwdLoop(g));
+    else requestAnimationFrame(() => fwdLoop(g));
+  };
+
+  /* backward: chained frame steps; each seek completes before the next */
+  const backStep = (g) => {
+    if (g !== gen) return;
+    const next = video.currentTime - BACK_STEP;
+    if (next <= target + EPS) { settle(); return; }
+    const on = () => { video.removeEventListener('seeked', on); backStep(g); };
+    video.addEventListener('seeked', on);
+    video.currentTime = next;
+  };
+
+  const go = () => {
+    gen += 1;
+    const g = gen;
     const c = video.currentTime;
-    const behind = target < c - 0.06;
-    if (behind && c >= WRAP_AT) {
-      video.currentTime = REENTRY;          // the left-to-left seam
-    } else if (!behind && Math.abs(c - target) <= EPS) {
+    if (Math.abs(c - target) <= EPS) { settle(); return; }
+    if (target > c) {
+      const distance = target - c;
+      video.playbackRate = distance > 0.7 ? 1.5 : 1;
+      video.play().catch(() => {});
+      fwdLoop(g);
+    } else {
       video.pause();
-      video.currentTime = target;           // land exactly on the pose
-    } else if (!behind && c > target + EPS) {
-      video.pause();                        // a starved clock let it overshoot
-      video.currentTime = target;
+      video.playbackRate = 1;
+      backStep(g);
     }
   };
-
-  // the guarantee: a wall clock pause scheduled from the distance to travel,
-  // so the pose lands even where frame callbacks and timeupdate are starved
-  let timer = 0;
-  const schedule = () => {
-    clearTimeout(timer);
-    const g = gen;
-    const c = video.currentTime;
-    const eta = target >= c - 0.06
-      ? target - c
-      : (WRAP_AT - c) + (target - REENTRY);
-    timer = setTimeout(() => { if (g === gen) step(); }, Math.max(0, eta * 1000) + 40);
-  };
-
-  // the browser can pause media on its own (power saving, occlusion). if that
-  // strands the character between poses, pick the journey back up
-  video.addEventListener('pause', () => {
-    const g = gen;
-    setTimeout(() => {
-      if (g !== gen || !video.paused) return;
-      if (Math.abs(video.currentTime - target) > EPS) {
-        video.play().catch(() => {});
-        schedule();
-      }
-    }, 180);
-  });
-
-  video.addEventListener('ended', () => {
-    // a starved clock let it run off the end of the file: re-enter and go on
-    if (Math.abs(target - video.duration) < 0.2) { video.currentTime = target; return; }
-    video.currentTime = REENTRY;
-    video.play().catch(() => {});
-    schedule();
-  });
-
-  const loop = (g) => {
-    if (g !== gen || video.paused) return;
-    step();
-    if (video.paused) return;
-    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => loop(g));
-    else requestAnimationFrame(() => loop(g));
-  };
-
-  const aim = (z) => {
-    if (z === zone) return;
-    zone = z;
-    target = STOP[z];
-    gen += 1;
-    video.play().catch(() => {});
-    loop(gen);
-    schedule();
-  };
-
-  // backstop for environments that starve frame callbacks: timeupdate still
-  // fires during playback, so the pose is caught even without the tight loop
-  video.addEventListener('timeupdate', step);
 
   window.addEventListener('mousemove', (e) => {
     if (!video.duration || Number.isNaN(video.duration)) return;
     const f = e.clientX / window.innerWidth;
-    aim(f < ANCHOR - BAND ? 'left' : f > ANCHOR + BAND ? 'right' : 'front');
+    const z = f < ANCHOR - BAND ? 'left' : f > ANCHOR + BAND ? 'right' : 'front';
+    if (z === zone) return;
+    zone = z;
+    target = STOP[z];
+    go();
   }, { passive: true });
+
+  // safety nets: never rest anywhere but a pose
+  video.addEventListener('ended', () => { settle(); });
+  video.addEventListener('pause', () => {
+    // the browser can pause media on its own; resume the journey if mid way
+    const g = gen;
+    setTimeout(() => {
+      if (g !== gen || !video.paused) return;
+      if (Math.abs(video.currentTime - target) > EPS && target > video.currentTime) go();
+    }, 180);
+  });
 
   // open paused on the front pose whenever the media (re)loads
   video.addEventListener('loadeddata', () => {
-    video.pause();
+    gen += 1;
     zone = 'front';
     target = STOP.front;
-    gen += 1;
-    video.currentTime = STOP.front;
+    settle();
   });
 
   // a host without Range request support serves a video whose seekable range
