@@ -7,7 +7,7 @@
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
      hero scrub       horizontal mouse movement plays the header reel back and forth
-     lens stage       a 3D cinema camera turns to face us, we fly through its glass into the statement
+     statement        a focus pull: lines rise through masks, the accent phrase colours last
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
      magnetic buttons small lean toward the cursor, feedback on the primary action
@@ -600,8 +600,8 @@ function prepareStatement() {
   const full = p.textContent.trim();
   const at = accent ? full.indexOf(accent) : -1;
   if (at >= 0) {
-    // the phrase takes its closing punctuation with it, and the two halves are
-    // separate blocks so the lens stage can lay them out around the camera
+    // the phrase takes its closing punctuation with it, so the full stop is
+    // never left sitting in ink at the end of the coloured phrase
     let end = at + accent.length;
     if ('.!?,'.includes(full[end])) end += 1;
     const before = full.slice(0, at).trim();
@@ -620,77 +620,6 @@ function splitLines(p) {
   if (typeof window.SplitText !== 'function') return { lines: [p], revert() {} };
   const s = new SplitText(p, { type: 'lines', linesClass: 'st-line', mask: 'lines' });
   return { lines: s.lines.length ? s.lines : [p], revert: () => s.revert() };
-}
-
-/**
- * The camera does not pull back, it goes in. The header footage pushes toward
- * the viewer, a cinema camera turns to face us and grows until its glass fills
- * the frame, the iris shuts and punches open, and we come out the far side of
- * the lens into the statement, on the same centred axis.
- *
- * The 3D rig is loaded on demand: if three.js or WebGL is unavailable the whole
- * stage is skipped and the two sections behave as ordinary stacked sections.
- */
-async function initLensStage() {
-  if (!window.matchMedia('(min-width: 761px) and (prefers-reduced-motion: no-preference)').matches) return;
-
-  const stage = $('[data-stage]');
-  const hero = $('.hero');
-  const media = $('.hero-media');
-  const center = $('.hero-center');
-  const statement = $('.statement');
-  const canvas = $('[data-cam]');
-  const p = $('[data-statement]');
-  if (!stage || !hero || !statement || !canvas || !p) return;
-
-  stage.classList.add('stage-on');
-
-  let rig = null;
-  try {
-    const { createCameraRig } = await import('./camera3d.js');
-    rig = createCameraRig({ canvas });
-  } catch (err) {
-    console.warn('Camera rig unavailable, falling back to stacked sections.', err);
-  }
-  if (!rig) { stage.classList.remove('stage-on'); return; }
-
-  state.stageOn = true;
-  state.rig = rig;
-  window.__rig = rig;
-
-  const tl = gsap.timeline({
-    scrollTrigger: {
-      trigger: stage,
-      start: 'top top',
-      end: '+=300%',
-      pin: true,
-      scrub: 1,
-      anticipatePin: 1,
-      invalidateOnRefresh: true,
-      onUpdate: (self) => rig.setProgress(self.progress)
-    }
-  });
-
-  tl
-    // 1. the footage dissolves DIRECTLY into the black of the glass: the rig
-    //    is already fading up underneath (camera3d enters over 0.03 to 0.13),
-    //    so this fade window matches it exactly and no paper shows between
-    .fromTo(media, { scale: 1 }, { scale: 1.5, ease: 'power2.in', duration: 0.14 }, 0)
-    .to(center, { scale: 1.25, opacity: 0, ease: 'power2.in', duration: 0.1 }, 0)
-    .to('.hero-wordmark', { opacity: 0, ease: 'power1.in', duration: 0.1 }, 0.02)
-    .to(['.hero-scrim', media], { opacity: 0, ease: 'power1.in', duration: 0.09 }, 0.04)
-    .to(hero, { opacity: 0, duration: 0.03 }, 0.14)
-    .to('#gl', { opacity: 0, duration: 0.03 }, 0.14)
-    // 2. the rig owns the frame: iris opens, we back out through the front
-    //    element until the whole camera stands centred (rig.setProgress)
-    // 3. the sentence takes its place AROUND the camera, half by half
-    .to(statement, { opacity: 1, duration: 0.04 }, 0.72)
-    .fromTo('.st-part',
-      { y: 46, opacity: 0, filter: 'blur(12px)' },
-      { y: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.07, ease: 'power3.out', duration: 0.18 },
-      0.74);
-
-  ScrollTrigger.refresh();
 }
 
 /** A disc that replaces the pointer over the work, labelled for what a click does. */
@@ -735,32 +664,37 @@ function initViewerCursor() {
 }
 
 /**
- * The header blurs out as the camera pushes through it, so this line arrives
- * the same way in reverse: each line rises out of depth, out of focus, and
- * resolves. One continuous focus pull rather than a separate effect.
+ * The section after the header, designed as one continuous focus pull: the
+ * block settles up from slightly deep, each line rises through its own mask
+ * and resolves from blur, and the accent phrase takes its colour last, once
+ * the sentence is standing. Scrubbed, so it plays at the reader's pace.
  */
-/**
- * Narrow screens and reduced motion never get the lens, so the statement keeps
- * a reveal of its own: the lines rise out of focus and resolve in place.
- */
-function initStatementFallback() {
+function initStatement() {
   const p = $('[data-statement]');
-  if (!p || REDUCED || state.stageOn) return;
+  if (!p || REDUCED) return;
 
   let split = null;
-  let tween = null;
+  let tl = null;
 
   const build = () => {
-    tween?.scrollTrigger?.kill();
-    tween?.kill();
+    tl?.scrollTrigger?.kill();
+    tl?.kill();
     split?.revert();
+    gsap.set(p, { clearProps: 'all' });
     split = splitLines(p);
-    gsap.set(split.lines, { yPercent: 100, opacity: 0, filter: 'blur(16px)' });
-    tween = gsap.to(split.lines, {
-      yPercent: 0, opacity: 1, filter: 'blur(0px)',
-      ease: 'power3.out', stagger: 0.14, duration: 1,
-      scrollTrigger: { trigger: p, start: 'top 92%', end: 'center 60%', scrub: 1, invalidateOnRefresh: true }
+
+    tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '.statement', start: 'top 78%', end: 'center 42%',
+        scrub: 1, invalidateOnRefresh: true
+      }
     });
+    tl.fromTo(p, { scale: 0.94, y: 44 }, { scale: 1, y: 0, ease: 'power2.out', duration: 1 }, 0)
+      .fromTo(split.lines,
+        { yPercent: 110, opacity: 0, filter: 'blur(14px)' },
+        { yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.16, ease: 'power3.out', duration: 0.8 }, 0)
+      .fromTo('.statement .hi',
+        { color: '#16171A' }, { color: '#E4381B', ease: 'none', duration: 0.3 }, 0.72);
   };
   build();
 
@@ -771,7 +705,6 @@ function initStatementFallback() {
     t = setTimeout(() => { build(); ScrollTrigger.refresh(); }, 250);
   });
 }
-
 
 /** Pinned horizontal pan. Wrapper pins, inner track slides. */
 function initReel() {
@@ -1011,8 +944,7 @@ async function boot() {
   if (window.gsap) {
     initHero();
     prepareStatement();
-    await initLensStage();    // loads the 3D rig, sets state.stageOn on success
-    initStatementFallback();  // only runs when the stage is not armed
+    initStatement();
     initEventTrail();
     initMagnetic();
     initViewerCursor();

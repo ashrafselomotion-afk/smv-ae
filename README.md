@@ -48,7 +48,6 @@ css/main.css        design tokens, layout, motion fallbacks
 css/fonts.css       self hosted Archivo and Geist Mono
 js/main.js          renders every section from the JSON, wires the motion
 js/gl.js            optional WebGL treatment for the opening stills
-js/camera3d.js      the cinema camera, built from primitives, and the fly through
 data/site.json      all site copy and media
 data/projects.json  the work
 .pages.yml          defines the admin screens
@@ -69,17 +68,13 @@ choreography, Lenis for continuous scrolling, three.js for the opening frame.
   colour everywhere, raise the saturation in `--grade` and the `mix()` value in
   `js/gl.js`.
 - **Square corners everywhere.** No rounded corners anywhere, on purpose.
-- **The header plays, and the scroll goes into a lens.** A looping placeholder
-  built from the work stills sits behind the headline. Set a showreel link in
-  the admin and it becomes a real video element instead. Replace
-  `placeholder-header-loop.webp` with a compressed mp4 when you have one.
-  Scrolling does not pull back, it pushes in: the footage drives toward the
-  viewer, a cinema camera turns to face us and grows until its glass fills the
-  frame, the iris shuts and punches open, and we come out the far side of the
-  lens into the statement, landing on the same centred axis. The header and the
-  statement are one pinned stage for this reason. Below 760px, and under
-  reduced motion, they are simply two stacked sections and three.js is never
-  even downloaded.
+- **The header is the page's one dark block.** Stacked headline top left, the
+  reel crossing the frame as a tilted panel that scrubs with the mouse, and the
+  giant cropped wordmark along the bottom. Phones play the reel as a loop.
+- **The statement is a scrubbed focus pull.** The block settles up from deep,
+  each line rises through its own mask and resolves from blur, and the accent
+  phrase takes its colour last. Built with GSAP SplitText, played at the
+  reader's scroll pace.
 - **The work pans sideways.** The work section pins and scrolls horizontally on
   screens wider than 760px. Below that, and for anyone who prefers reduced
   motion, it unrolls into a normal vertical list.

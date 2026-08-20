@@ -186,34 +186,6 @@ h1,h2,h3{
 }
 .btn-line:hover{color:var(--accent-deep);border-color:var(--accent-deep)}
 
-/* ============================ the lens stage ============================
-   By default the header and the statement are two ordinary stacked sections,
-   which is what mobile, no-JS and reduced-motion visitors get. When the
-   transition is armed, JS adds .stage-on and they become two layers of one
-   pinned frame so the camera can travel from one into the other. */
-.lens{display:none}
-
-.stage-on{position:relative;height:100dvh;overflow:hidden}
-.stage-on > .hero,
-.stage-on > .statement{
-  position:absolute;inset:0;min-height:0;
-  will-change:transform,opacity;
-}
-.stage-on > .statement{opacity:0}
-/* inside the stage the sentence is laid out AROUND the camera: opening half
-   top left, accent half bottom right, the rig holding the centre */
-.stage-on .statement p{
-  position:relative;width:100%;height:100%;max-width:none;
-  font-size:clamp(1.3rem,3.1vw,2.9rem);
-}
-.stage-on .st-part{position:absolute;will-change:transform,opacity,filter}
-.stage-on .st-main{left:0;top:16%;max-width:14ch;text-align:left}
-.stage-on .hi{right:0;bottom:14%;max-width:12ch;text-align:right}
-.stage-on .lens{
-  display:block;position:absolute;inset:0;z-index:3;
-  width:100%;height:100%;pointer-events:none;
-}
-
 /* ============================ 1 / hero ============================
    The layout of the reference: a stacked headline top left, ONE large object
    crossing the centre of the frame (our showreel, tilted), and a giant cropped
