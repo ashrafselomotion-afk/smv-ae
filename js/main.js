@@ -842,7 +842,7 @@ function initMobileMenu() {
  * The character tracks the hand with real footage in both directions. This
  * clip is a clean monotonic sweep, so the poses sit in timeline order:
  *   0.08s  LEFT, hard profile
- *   0.95s  FRONT, aiming straight out
+ *   1.88s  FRONT, timecode 0:00:01:21 at the clip's measured 24fps
  *   3.05s  RIGHT, hard profile
  * Every journey is one leg: forward as native playback, backward as chained
  * frame steps (measured about 20ms a step, smooth as motion). No bridges, no
@@ -856,7 +856,7 @@ function initHeroScrub() {
   if (!video || REDUCED) return;
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const STOP = { left: 0.08, front: 0.95, right: 3.05 };
+  const STOP = { left: 0.08, front: 1.88, right: 3.05 };
   const EPS = 0.05;
   const BACK_STEP = 0.05;
   const ANCHOR = 0.58;
