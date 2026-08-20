@@ -869,18 +869,39 @@ function initHeroScrub() {
   let gen = 0;
 
   const settle = () => {
+    mode = 'idle';
     video.pause();
     video.playbackRate = 1;
     video.currentTime = target;
   };
 
-  /* forward: native playback, checked every frame */
+  let mode = 'idle';           // 'fwd' while native playback runs toward target
+
+  /* forward arrival check, callable from any clock */
+  const fwdCheck = () => {
+    if (mode !== 'fwd') return;
+    if (video.currentTime >= target - EPS) { mode = 'idle'; settle(); }
+  };
+
+  /* forward: native playback, checked every frame, with two backup clocks
+     (timeupdate and a wall clock timer) because any one clock can starve
+     and let playback sail past the pose */
   const fwdLoop = (g) => {
     if (g !== gen) return;
-    if (video.currentTime >= target - EPS) { settle(); return; }
+    fwdCheck();
+    if (mode !== 'fwd') return;
     if (video.paused) video.play().catch(() => {});
     if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => fwdLoop(g));
     else requestAnimationFrame(() => fwdLoop(g));
+  };
+  video.addEventListener('timeupdate', fwdCheck);
+
+  let timer = 0;
+  const scheduleFwd = () => {
+    clearTimeout(timer);
+    const g = gen;
+    const eta = (target - video.currentTime) / (video.playbackRate || 1);
+    timer = setTimeout(() => { if (g === gen) fwdCheck(); }, Math.max(0, eta * 1000) + 40);
   };
 
   /* backward: chained frame steps; each seek completes before the next */
@@ -901,9 +922,12 @@ function initHeroScrub() {
     if (target > c) {
       const distance = target - c;
       video.playbackRate = distance > 0.7 ? 1.5 : 1;
+      mode = 'fwd';
       video.play().catch(() => {});
       fwdLoop(g);
+      scheduleFwd();
     } else {
+      mode = 'idle';
       video.pause();
       video.playbackRate = 1;
       backStep(g);
@@ -927,7 +951,7 @@ function initHeroScrub() {
     const g = gen;
     setTimeout(() => {
       if (g !== gen || !video.paused) return;
-      if (Math.abs(video.currentTime - target) > EPS && target > video.currentTime) go();
+      if (Math.abs(video.currentTime - target) > EPS) go();
     }, 180);
   });
 
