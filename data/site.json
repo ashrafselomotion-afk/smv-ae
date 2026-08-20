@@ -10,10 +10,28 @@
     }
   },
   "hero": {
-    "line1": "We shoot what",
-    "line2": "the UAE watches.",
-    "sub": "Videography, photography, motion graphics and government event coverage. Ten years in the UAE.",
+    "line1": "Hey there, this is SMV,",
+    "line2": "the UAE's production house for a decade",
+    "sub": "Glad you found us. Ten years of frames, and we are still rolling. Now, what are we shooting?",
     "ctaPrimary": "See the work",
+    "pills": [
+      {
+        "label": "Pitch us a project",
+        "href": "#contact"
+      },
+      {
+        "label": "See the work",
+        "href": "#work"
+      },
+      {
+        "label": "What we do",
+        "href": "#craft"
+      },
+      {
+        "label": "Who we shoot for",
+        "href": "#clients"
+      }
+    ],
     "image": "assets/uploads/placeholder-hero.jpg",
     "video": "",
     "scrub": "assets/uploads/header-scrub.mp4",

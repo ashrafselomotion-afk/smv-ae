@@ -168,9 +168,7 @@ function renderChrome(site) {
   const n = site.brand?.navLabels || {};
   $$('[data-nav]').forEach((el) => setText(el, n[el.dataset.nav]));
   if (site.brand?.name) {
-    $('.logo').innerHTML = `${esc(site.brand.name)}<span>${esc(site.brand.suffix || '')}</span>`;
-    const wm = $('[data-hero-wordmark]');
-    if (wm) wm.innerHTML = `${esc(site.brand.name)}<i>${esc(site.brand.suffix || '')}</i>`;
+    $('.logo-word').innerHTML = `${esc(site.brand.name)}<span>${esc(site.brand.suffix || '')}</span>`;
   }
   Object.entries(site.hero || {}).forEach(([k, v]) => {
     $$(`[data-hero="${k}"]`).forEach((el) => setText(el, v));
@@ -585,12 +583,7 @@ function countable(raw) {
   return { prefix: m[1], value: m[2], suffix: m[3] };
 }
 
-function initHero() {
-  if (REDUCED) return;
-  gsap.timeline({ defaults: { ease: 'expo.out' } })
-    .from('.hero-title .ln i', { yPercent: 112, duration: 1.15, stagger: 0.08 })
-    .from('.hero-sub, .hero-actions', { y: 18, opacity: 0, duration: 0.9, stagger: 0.08 }, 0.32);
-}
+
 
 /** Writes the statement copy and its accent phrase. Split happens later. */
 function prepareStatement() {
@@ -789,6 +782,63 @@ function initSmoothScroll() {
 
 /** Plain crossfade through the stills stack when there is no WebGL context. */
 /**
+ * The typed sentence: 38ms a character after a 600ms breath, with a blinking
+ * caret that leaves once the sentence is finished. Reduced motion gets the
+ * finished sentence immediately.
+ */
+function initTypewriter() {
+  const out = $('[data-typed]');
+  const caret = $('[data-caret]');
+  const text = state.site?.hero?.sub || '';
+  if (!out || !text) return;
+  if (REDUCED) { out.textContent = text; caret?.remove(); return; }
+  caret.hidden = false;
+  let i = 0;
+  setTimeout(() => {
+    const iv = setInterval(() => {
+      i += 1;
+      out.textContent = text.slice(0, i);
+      if (i >= text.length) { clearInterval(iv); caret.remove(); }
+    }, 38);
+  }, 600);
+}
+
+/**
+ * The pill actions arrive 400ms after load, independent of the typing, as a
+ * fade and small rise. Four white pills route into the page; the outline pill
+ * carries the email and copies it on click.
+ */
+function renderPills() {
+  const box = $('[data-pills]');
+  if (!box) return;
+  const pills = state.site?.hero?.pills || [];
+  const email = state.site?.contact?.email || '';
+  const copyIcon = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7"/><rect x="1" y="1" width="7" height="7"/></svg>';
+  box.innerHTML =
+    pills.map((p) => `<a class="pill" href="${esc(p.href || '#')}">${esc(p.label || '')}</a>`).join('') +
+    (email ? `<button class="pill pill-outline" type="button" data-copy-email>Reach us: <u>${esc(email)}</u>${copyIcon}</button>` : '');
+  $('[data-copy-email]', box)?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(email).catch(() => {});
+  });
+  setTimeout(() => box.classList.add('in'), REDUCED ? 0 : 400);
+}
+
+/** The burger morphs to a cross and the white menu fades over the page. */
+function initMobileMenu() {
+  const btn = $('[data-burger]');
+  const menu = $('[data-mobile-menu]');
+  if (!btn || !menu) return;
+  const set = (open) => {
+    document.body.classList.toggle('menu-open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    menu.setAttribute('aria-hidden', String(!open));
+  };
+  btn.addEventListener('click', () => set(!document.body.classList.contains('menu-open')));
+  $$('a', menu).forEach((a) => a.addEventListener('click', () => set(false)));
+}
+
+/**
  * The header follows the hand: horizontal mouse movement plays the reel
  * forward and backward. Movement is accumulated into a target time; only one
  * seek is ever in flight, and the seeked handler picks up whatever movement
@@ -938,11 +988,14 @@ async function boot() {
   renderFeatured(state.projects);
   renderClients(site.clients);
 
+  renderPills();
+  initTypewriter();
+  initMobileMenu();
+
   wireEvents();
   initReveals();
 
   if (window.gsap) {
-    initHero();
     prepareStatement();
     initStatement();
     initEventTrail();

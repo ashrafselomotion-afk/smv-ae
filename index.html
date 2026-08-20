@@ -20,7 +20,7 @@
 <link rel="preload" href="assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
 <!-- the header video carries preload="auto" itself; preloading the fallback
      loop here would cost 3MB on every visit that never uses it -->
-<link rel="stylesheet" href="css/main.css?v=36">
+<link rel="stylesheet" href="css/main.css?v=38">
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
@@ -38,36 +38,46 @@
 <div class="viewer" data-viewer aria-hidden="true">View</div>
 
 <header class="nav">
-  <div class="wrap nav-inner">
-    <a class="logo" href="#top" aria-label="SMV.AE home">SMV<span>.AE</span></a>
+  <div class="nav-inner">
+    <a class="logo" href="#top" aria-label="SMV.AE home">
+      <span class="logo-word">SMV<span>.AE</span></span>
+      <span class="logo-mark" aria-hidden="true">&#x2733;&#xFE0E;</span>
+    </a>
     <nav class="nav-links" aria-label="Primary">
-      <a href="#work" data-nav="work">Work</a>
-      <a href="#craft" data-nav="studio">Studio</a>
-      <a href="#clients" data-nav="clients">Clients</a>
+      <span><a href="#work" data-nav="work">Work</a><i>,&nbsp;</i></span>
+      <span><a href="#craft" data-nav="studio">Studio</a><i>,&nbsp;</i></span>
+      <span><a href="#clients" data-nav="clients">Clients</a></span>
     </nav>
-    <a class="btn btn-nav" href="#contact" data-nav="cta">Start a project</a>
+    <a class="nav-cta" href="#contact" data-nav="cta">Start a project</a>
+    <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" data-burger>
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
 
+<!-- mobile menu -->
+<div class="mobile-menu" data-mobile-menu aria-hidden="true">
+  <a href="#work" data-nav="work">Work</a>
+  <a href="#craft" data-nav="studio">Studio</a>
+  <a href="#clients" data-nav="clients">Clients</a>
+  <a class="mm-cta" href="#contact" data-nav="cta">Start a project</a>
+</div>
+
 <main id="top">
 
-  <!-- 1 / hero : stacked headline, the reel crossing the frame, the name along the bottom -->
+  <!-- 1 / hero : the reel full bleed under the hand, intro + typed line + pills -->
   <section class="hero" aria-labelledby="hero-h">
-    <span class="hero-wordmark" data-hero-wordmark aria-hidden="true">SMV<i>.AE</i></span>
+    <h1 id="hero-h" class="sr-only">SMV.AE, media production in the UAE</h1>
     <figure class="hero-media" data-hero-media>
-      <img src="assets/uploads/placeholder-header-loop.webp" alt="" class="on" fetchpriority="high">
+      <img src="assets/uploads/placeholder-hero.jpg" alt="" class="on" fetchpriority="high">
     </figure>
-    <div class="hero-scrim" aria-hidden="true"></div>
     <div class="hero-center">
-      <h1 class="hero-title" id="hero-h">
-        <span class="ln"><i data-hero="line1">We shoot what</i></span>
-        <span class="ln"><i data-hero="line2">the UAE watches.</i></span>
-      </h1>
-      <p class="hero-sub" data-hero="sub">Videography, photography, motion graphics and government event coverage. Ten years in the UAE.</p>
-      <div class="hero-actions">
-        <a class="btn" href="#work" data-hero="ctaPrimary">See the work</a>
-        <a class="btn-line" href="#contact" data-nav="cta">Start a project</a>
-      </div>
+      <p class="hero-intro" aria-hidden="true">
+        <span data-hero="line1">Hey there, this is SMV,</span><br>
+        <span data-hero="line2">the UAE's production house for a decade</span>
+      </p>
+      <p class="hero-typed"><span data-typed></span><i class="type-caret" data-caret hidden></i></p>
+      <div class="hero-pills" data-pills></div>
     </div>
   </section>
 
@@ -206,6 +216,6 @@ you are shooting.</h2>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
-<script type="module" src="js/main.js?v=36"></script>
+<script type="module" src="js/main.js?v=38"></script>
 </body>
 </html>

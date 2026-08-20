@@ -37,10 +37,16 @@ content:
         label: Opening screen
         type: object
         fields:
-          - { name: line1, label: Headline line 1 (keep it short, it must fit one line), type: string }
-          - { name: line2, label: Headline line 2 (keep it short, it must fit one line), type: string }
-          - { name: sub, label: Supporting line (20 words maximum), type: text }
-          - { name: ctaPrimary, label: Main button label, type: string }
+          - { name: line1, label: Blurred intro, first line, type: string }
+          - { name: line2, label: Blurred intro, second line, type: string }
+          - { name: sub, label: The sentence that types itself out, type: text }
+          - name: pills
+            label: Pill buttons under the typed sentence
+            type: object
+            list: true
+            fields:
+              - { name: label, label: Button text, type: string }
+              - { name: href, label: 'Where it goes (#work, #craft, #clients or #contact)', type: string }
           - { name: image, label: Opening image, type: image }
           - { name: video, label: 'Showreel that plays behind the headline. Paste an mp4 link for the best result. Leave empty to keep the looping placeholder below.', type: string }
           - { name: scrub, label: 'Header video that follows the mouse: moving left and right plays it back and forth. Needs a direct mp4 link. Takes priority over the showreel.', type: string }
