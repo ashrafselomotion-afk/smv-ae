@@ -68,9 +68,14 @@ choreography, Lenis for continuous scrolling, three.js for the opening frame.
   colour everywhere, raise the saturation in `--grade` and the `mix()` value in
   `js/gl.js`.
 - **Square corners everywhere.** No rounded corners anywhere, on purpose.
-- **The header is the page's one dark block.** Stacked headline top left, the
-  reel crossing the frame as a tilted panel that scrubs with the mouse, and the
-  giant cropped wordmark along the bottom. Phones play the reel as a loop.
+- **The header reel tracks the mouse.** The clip plays full bleed behind the
+  intro, the typed sentence and the pill actions. The character aims where the
+  cursor is: the viewport is three zones around him, and crossing a boundary
+  PLAYS the reel forward to the matching pose (1.45s front, 1.94s right, 3.80s
+  left) and pauses there. Backward moves ride the sweep to its end and re-enter
+  at 0.97s, a frame close enough to the hard left that the seam is invisible.
+  The aim points are tuned to this clip; a new reel needs new timestamps.
+  Phones play the reel as a plain loop.
 - **The statement is a scrubbed focus pull.** The block settles up from deep,
   each line rises through its own mask and resolves from blur, and the accent
   phrase takes its colour last. Built with GSAP SplitText, played at the
