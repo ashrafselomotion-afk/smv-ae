@@ -6,7 +6,7 @@
    Motion, and the reason each piece exists:
      Lenis            continuous scroll, so the reel and the parallax read as one move
      hero lines       masked reveal, establishes hierarchy on load
-     hero track       journeys move the way the hand went; the bridge is a dissolve
+     hero track       a monotonic sweep: left, front, right in timeline order
      statement        a focus pull: lines rise through masks, the accent phrase colours last
      event trail      cursor deals out past events, the section is about coverage
      counters         count up on entry, draws the eye to the claim
@@ -839,162 +839,95 @@ function initMobileMenu() {
 }
 
 /**
- * The character tracks the hand with real footage, and every journey moves in
- * the direction the hand went. Poses and bridge frames on the clip timeline:
- *   1.16s  mild left turn            (bridge, measured closest match)
- *   1.45s  FRONT, aiming straight out
- *   1.94s  RIGHT, hard profile
- *   2.90s  mid swing, same attitude  (bridge twin of 1.16s)
- *   3.80s  LEFT, hard profile
- * front<->right play directly. front->left plays IN REVERSE to the 1.16s
- * bridge (a leftward turn), then DISSOLVES over 220ms into the 2.90s twin on
- * a second copy of the reel that is already playing on into the hard left;
- * left->front is the same road home. No hard cut exists in this footage that
- * the eye cannot catch (best frame pair measures 7.8x an adjacent frame
- * difference), so the bridge is a crossfade, not a cut.
+ * The character tracks the hand with real footage in both directions. This
+ * clip is a clean monotonic sweep, so the poses sit in timeline order:
+ *   0.08s  LEFT, hard profile
+ *   0.95s  FRONT, aiming straight out
+ *   3.05s  RIGHT, hard profile
+ * Every journey is one leg: forward as native playback, backward as chained
+ * frame steps (measured about 20ms a step, smooth as motion). No bridges, no
+ * cuts, no dissolves; the footage itself always turns the way the hand went.
+ * The mouse can retarget mid swing and the plan recomputes from wherever he
+ * is. Arrival pauses exactly on the pose.
  */
 function initHeroScrub() {
   const fig = $('[data-hero-media]');
-  const videoA = fig && fig.dataset.mode === 'scrub' ? $('video', fig) : null;
-  if (!videoA || REDUCED) return;
+  const video = fig && fig.dataset.mode === 'scrub' ? $('video', fig) : null;
+  if (!video || REDUCED) return;
   if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
 
-  const F = 1.45, R = 1.94, L = 3.80;   // the poses
-  const ML = 1.16, LB = 2.90;           // the measured bridge pair
-  const STOP = { front: F, right: R, left: L };
+  const STOP = { left: 0.08, front: 0.95, right: 3.05 };
   const EPS = 0.05;
   const BACK_STEP = 0.05;
   const ANCHOR = 0.58;
   const BAND = 0.12;
-
-  // the second copy of the reel, stacked underneath, for the dissolve
-  const videoB = document.createElement('video');
-  videoB.src = videoA.currentSrc || videoA.src;
-  videoB.muted = true; videoB.playsInline = true; videoB.preload = 'auto';
-  videoB.setAttribute('muted', ''); videoB.setAttribute('playsinline', '');
-  videoB.style.opacity = '0';
-  fig.appendChild(videoB);
-
-  let active = videoA;
-  const standby = () => (active === videoA ? videoB : videoA);
 
   let zone = 'front';
   let gen = 0;
   let timer = 0;
 
   const finish = () => {
-    active.pause();
-    active.playbackRate = 1;
-    active.currentTime = STOP[zone];
+    video.pause();
+    video.playbackRate = 1;
+    video.currentTime = STOP[zone];
   };
 
-  /* ---- leg primitives, each calls done() exactly once, all gen guarded ---- */
-
-  const seekOnce = (g, el, to, done) => {
+  const seekOnce = (g, to, done) => {
     if (g !== gen) return;
-    const on = () => { el.removeEventListener('seeked', on); if (g === gen) done(); };
-    el.addEventListener('seeked', on);
-    el.currentTime = to;
+    const on = () => { video.removeEventListener('seeked', on); if (g === gen) done(); };
+    video.addEventListener('seeked', on);
+    video.currentTime = to;
   };
 
-  const fwdTo = (g, to, done) => {
+  const fwdTo = (g, to) => {
     if (g !== gen) return;
-    const el = active;
-    const distance = to - el.currentTime;
-    el.playbackRate = distance > 0.7 ? 1.5 : 1;
-    el.play().catch(() => {});
+    const distance = to - video.currentTime;
+    video.playbackRate = distance > 1.2 ? 1.5 : 1;
+    video.play().catch(() => {});
     const check = () => {
-      if (g !== gen || el !== active) return false;
-      if (el.currentTime >= to - EPS) {
-        el.pause();
-        el.playbackRate = 1;
-        done();
-        return false;
-      }
+      if (g !== gen) return false;
+      if (video.currentTime >= to - EPS) { finish(); return false; }
       return true;
     };
     const loop = () => {
       if (!check()) return;
-      if (el.requestVideoFrameCallback) el.requestVideoFrameCallback(loop);
+      if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(loop);
       else requestAnimationFrame(loop);
     };
     loop();
     // backup clocks: timeupdate plus a wall clock timer, since any one clock
     // can starve and let playback sail past the mark
-    const onTime = () => { if (!check()) el.removeEventListener('timeupdate', onTime); };
-    el.addEventListener('timeupdate', onTime);
+    const onTime = () => { if (!check()) video.removeEventListener('timeupdate', onTime); };
+    video.addEventListener('timeupdate', onTime);
     clearTimeout(timer);
-    timer = setTimeout(() => { if (g === gen) check(); }, Math.max(0, distance / (el.playbackRate || 1)) * 1000 + 60);
+    timer = setTimeout(() => { if (g === gen) check(); }, Math.max(0, distance / (video.playbackRate || 1)) * 1000 + 60);
   };
 
-  const backTo = (g, to, done) => {
+  const backTo = (g, to) => {
     if (g !== gen) return;
-    const el = active;
-    el.pause();
-    el.playbackRate = 1;
+    video.pause();
+    video.playbackRate = 1;
     const step = () => {
-      if (g !== gen || el !== active) return;
-      const next = el.currentTime - BACK_STEP;
-      if (next <= to + EPS) { done(); return; }
-      seekOnce(g, el, next, step);
+      if (g !== gen) return;
+      const next = video.currentTime - BACK_STEP;
+      if (next <= to + EPS) { finish(); return; }
+      seekOnce(g, next, step);
     };
     step();
-  };
-
-  /** the dissolve: park the standby on the twin frame, fade it up over the
-      active copy, and hand the journey to it; motion continues through the
-      fade because the next leg starts the moment the fade begins */
-  const bridge = (g, to, done) => {
-    if (g !== gen) return;
-    const from = active;
-    const el = standby();
-    const start = () => seekOnce(g, el, to, () => {
-      if (g !== gen) return;
-      el.style.opacity = '1';
-      from.style.opacity = '0';
-      from.pause();
-      active = el;
-      done();
-    });
-    if (el.readyState >= 1) start();
-    else el.addEventListener('loadedmetadata', start, { once: true });
-  };
-
-  /* ---- the journey planner: legs from wherever he is to the zone's pose ---- */
-
-  const plan = () => {
-    const c = active.currentTime;
-    if (zone === 'left') {
-      if (c <= F + 0.1) return [{ back: ML }, { bridge: LB }, { fwd: L }];
-      return [{ fwd: L }];                     // from the right: the natural swing
-    }
-    if (zone === 'front') {
-      if (c >= LB - 0.05) return [{ back: LB }, { bridge: ML }, { fwd: F }];
-      if (c > F) return [{ back: F }];         // from the right: reverse straight home
-      return [{ fwd: F }];
-    }
-    if (c > R) return [{ back: R }];           // from the left: reverse of the swing
-    return [{ fwd: R }];
   };
 
   const go = () => {
     gen += 1;
     const g = gen;
-    const legs = plan();
-    const next = () => {
-      if (g !== gen) return;
-      const leg = legs.shift();
-      if (!leg) { finish(); return; }
-      if (leg.bridge !== undefined) bridge(g, leg.bridge, next);
-      else if (leg.fwd !== undefined) fwdTo(g, leg.fwd, next);
-      else backTo(g, leg.back, next);
-    };
-    if (Math.abs(active.currentTime - STOP[zone]) <= EPS) { finish(); return; }
-    next();
+    const target = STOP[zone];
+    const c = video.currentTime;
+    if (Math.abs(c - target) <= EPS) { finish(); return; }
+    if (target > c) fwdTo(g, target);
+    else backTo(g, target);
   };
 
   window.addEventListener('mousemove', (e) => {
-    if (!active.duration || Number.isNaN(active.duration)) return;
+    if (!video.duration || Number.isNaN(video.duration)) return;
     const f = e.clientX / window.innerWidth;
     const z = f < ANCHOR - BAND ? 'left' : f > ANCHOR + BAND ? 'right' : 'front';
     if (z === zone) return;
@@ -1003,26 +936,18 @@ function initHeroScrub() {
   }, { passive: true });
 
   // the browser can pause media on its own; replan from wherever he stopped
-  [videoA, videoB].forEach((el) => {
-    el.addEventListener('pause', () => {
-      if (el !== active) return;
-      const g = gen;
-      setTimeout(() => {
-        if (g !== gen || el !== active || !el.paused) return;
-        if (Math.abs(el.currentTime - STOP[zone]) > EPS) go();
-      }, 180);
-    });
-    el.addEventListener('ended', () => { if (el === active) finish(); });
+  video.addEventListener('pause', () => {
+    const g = gen;
+    setTimeout(() => {
+      if (g !== gen || !video.paused) return;
+      if (Math.abs(video.currentTime - STOP[zone]) > EPS) go();
+    }, 180);
   });
+  video.addEventListener('ended', () => { finish(); });
 
-  // open paused on the front pose whenever the primary reel (re)loads
-  videoA.addEventListener('loadeddata', () => {
+  // open paused on the front pose whenever the media (re)loads
+  video.addEventListener('loadeddata', () => {
     gen += 1;
-    if (active !== videoA) {
-      videoB.style.opacity = '0';
-      videoA.style.opacity = '1';
-      active = videoA;
-    }
     zone = 'front';
     finish();
   });
@@ -1032,21 +957,18 @@ function initHeroScrub() {
   let rescued = false;
   const ensureSeekable = async () => {
     if (rescued) return;
-    const ok = videoA.seekable.length && videoA.seekable.end(0) >= (videoA.duration || 0) - 0.1;
-    if (ok) { videoA.currentTime = F; return; }
+    const ok = video.seekable.length && video.seekable.end(0) >= (video.duration || 0) - 0.1;
+    if (ok) { video.currentTime = STOP.front; return; }
     rescued = true;
     try {
-      const res = await fetch(videoA.currentSrc || videoA.src);
+      const res = await fetch(video.currentSrc || video.src);
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      videoA.src = url;
-      videoB.src = url;
-      videoA.load();
-      videoB.load();
+      video.src = URL.createObjectURL(blob);
+      video.load();
     } catch (err) { /* stays unseekable; the header simply holds its poster */ }
   };
-  if (videoA.readyState >= 1) ensureSeekable();
-  videoA.addEventListener('durationchange', ensureSeekable);
+  if (video.readyState >= 1) ensureSeekable();
+  video.addEventListener('durationchange', ensureSeekable);
 }
 
 function heroCrossfade() {
